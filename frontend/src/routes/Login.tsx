@@ -23,6 +23,9 @@ export const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Define where to send the user after they log in
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
+
   // Mode: 'signin' or 'signup'
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [selectedRole, setSelectedRole] = useState<UserRole>('student');
