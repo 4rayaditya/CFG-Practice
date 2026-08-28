@@ -8,7 +8,6 @@ interface AuthContextType {
   session: Session | null;
   token: string | null;
   isAuthenticated: boolean;
-  isLoading: boolean;
   isSupabaseActive: boolean;
   login: (role?: UserRole) => void;
   logout: () => Promise<void>;
@@ -54,13 +53,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(() => mockUsers[currentRole]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Synchronize state with Supabase Auth session listener
+  // Listen for real Supabase Auth session changes if configured
   useEffect(() => {
-    let mounted = true;
-
     if (isSupabaseConfigured) {
       supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
-        if (!mounted) return;
         if (data.session) {
           setSession(data.session);
           setToken(data.session.access_token);
@@ -73,13 +69,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             role: metaRole,
           });
         }
-        setIsLoading(false);
-      }).catch(() => {
-        if (mounted) setIsLoading(false);
       });
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
-        if (!mounted) return;
         setSession(session);
         if (session) {
           setToken(session.access_token);
@@ -94,18 +86,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setToken(null);
           localStorage.removeItem('mm_auth_token');
-          setUser(null);
         }
-        setIsLoading(false);
       });
 
-      return () => {
-        mounted = false;
-        subscription.unsubscribe();
-      };
-    } else {
-      // Demo Mode Initial Load Complete
-      setIsLoading(false);
+      return () => subscription.unsubscribe();
     }
   }, []);
 
@@ -132,19 +116,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signInWithSupabase = async (email: string, password: string) => {
-    setIsLoading(true);
     if (!isSupabaseConfigured) {
+      // Demo fallback mode
       login(currentRole);
-      setIsLoading(false);
       return { success: true };
     }
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        setIsLoading(false);
-        return { success: false, error: error.message };
-      }
+      if (error) return { success: false, error: error.message };
       if (data.session) {
         setSession(data.session);
         setToken(data.session.access_token);
@@ -157,19 +137,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: metaRole,
         });
       }
-      setIsLoading(false);
       return { success: true };
     } catch (err: any) {
-      setIsLoading(false);
       return { success: false, error: err.message || 'Login failed' };
     }
   };
 
   const signUpWithSupabase = async (email: string, password: string, fullName: string, role: UserRole) => {
-    setIsLoading(true);
     if (!isSupabaseConfigured) {
+      // Demo fallback mode
       login(role);
-      setIsLoading(false);
       return { success: true };
     }
 
@@ -184,19 +161,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           },
         },
       });
-      if (error) {
-        setIsLoading(false);
-        return { success: false, error: error.message };
-      }
+      if (error) return { success: false, error: error.message };
       if (data.session) {
         setSession(data.session);
         setToken(data.session.access_token);
         localStorage.setItem('mm_auth_token', data.session.access_token);
       }
-      setIsLoading(false);
       return { success: true };
     } catch (err: any) {
-      setIsLoading(false);
       return { success: false, error: err.message || 'Registration failed' };
     }
   };
@@ -208,7 +180,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         session,
         token,
         isAuthenticated: !!user,
-        isLoading,
         isSupabaseActive: isSupabaseConfigured,
         login,
         logout,

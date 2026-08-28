@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 export const Login: React.FC = () => {
-  const { setRole, signInWithSupabase, signUpWithSupabase } = useAuth();
+  const { login, setRole, signInWithSupabase, signUpWithSupabase, isSupabaseActive } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -34,7 +34,18 @@ export const Login: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
+  const getRoleDestination = (role: UserRole) => {
+    if (from && from !== '/login' && from !== '/403') return from;
+    switch (role) {
+      case 'mentor':
+        return '/mentor/doubt-board';
+      case 'admin':
+        return '/admin/analytics';
+      case 'student':
+      default:
+        return '/student/voice-query';
+    }
+  };
 
   const handleQuickFill = (role: UserRole) => {
     setSelectedRole(role);
@@ -54,19 +65,6 @@ export const Login: React.FC = () => {
     }
   };
 
-  const getRoleDestination = (role: UserRole) => {
-    if (from && from !== '/login' && from !== '/403') return from;
-    switch (role) {
-      case 'mentor':
-        return '/mentor/doubt-board';
-      case 'admin':
-        return '/admin/analytics';
-      case 'student':
-      default:
-        return '/student/voice-query';
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -82,10 +80,13 @@ export const Login: React.FC = () => {
           return;
         }
         setRole(selectedRole);
-        setSuccessMsg('Signed in successfully! Routing to your dashboard...');
+        setSuccessMsg('Signed in successfully! Redirecting...');
         setTimeout(() => {
-          navigate(getRoleDestination(selectedRole));
-        }, 500);
+          if (selectedRole === 'student') navigate('/student/voice-query');
+          else if (selectedRole === 'mentor') navigate('/mentor/doubt-board');
+          else if (selectedRole === 'admin') navigate('/admin/analytics');
+          else navigate(from);
+        }, 600);
       } else {
         const result = await signUpWithSupabase(email, password, fullName || 'Community Member', selectedRole);
         if (!result.success) {
@@ -93,10 +94,12 @@ export const Login: React.FC = () => {
           setLoading(false);
           return;
         }
-        setSuccessMsg('Account created successfully! Routing to your dashboard...');
+        setSuccessMsg('Account created successfully! Redirecting to your community dashboard...');
         setTimeout(() => {
-          navigate(getRoleDestination(selectedRole));
-        }, 600);
+          if (selectedRole === 'student') navigate('/student/voice-query');
+          else if (selectedRole === 'mentor') navigate('/mentor/doubt-board');
+          else navigate('/roadmap');
+        }, 800);
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'An unexpected error occurred.');
