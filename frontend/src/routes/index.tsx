@@ -8,6 +8,8 @@ import { DoubtBoard } from './mentor/DoubtBoard';
 import { CareerRoadmap } from './roadmap/CareerRoadmap';
 import { AdminDashboard } from './admin/AdminDashboard';
 import { ProtectedRoute } from './AuthGuard';
+import { Forbidden } from './Forbidden';
+import { DashboardRedirect } from './DashboardRedirect';
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -17,8 +19,13 @@ export const AppRoutes: React.FC = () => {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/roadmap" element={<CareerRoadmap />} />
+        <Route path="/403" element={<Forbidden />} />
+        <Route path="/forbidden" element={<Forbidden />} />
 
-        {/* Student Protected Routes (CUJ 1: Voice Question Intake) */}
+        {/* Central Dynamic Role Resolver */}
+        <Route path="/dashboard" element={<DashboardRedirect />} />
+
+        {/* Student Protected Routes (CUJ 1) */}
         <Route
           path="/student/voice-query"
           element={
@@ -27,8 +34,9 @@ export const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="/student" element={<Navigate to="/student/voice-query" replace />} />
 
-        {/* Mentor Protected Routes (CUJ 3: Volunteer Doubt Board) */}
+        {/* Mentor Protected Routes (CUJ 3) */}
         <Route
           path="/mentor/doubt-board"
           element={
@@ -37,8 +45,9 @@ export const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="/mentor" element={<Navigate to="/mentor/doubt-board" replace />} />
 
-        {/* Admin Protected Routes (Director Analytics Dashboard) */}
+        {/* Admin Protected Routes */}
         <Route
           path="/admin/analytics"
           element={
@@ -47,6 +56,7 @@ export const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="/admin" element={<Navigate to="/admin/analytics" replace />} />
 
         {/* Fallback Catch-All */}
         <Route path="*" element={<Navigate to="/" replace />} />
