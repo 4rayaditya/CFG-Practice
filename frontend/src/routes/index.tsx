@@ -7,7 +7,7 @@ import { VoiceQuery } from './student/VoiceQuery';
 import { DoubtBoard } from './mentor/DoubtBoard';
 import { CareerRoadmap } from './roadmap/CareerRoadmap';
 import { AdminDashboard } from './admin/AdminDashboard';
-import { AuthGuard } from './AuthGuard';
+import { ProtectedRoute } from './AuthGuard';
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -18,37 +18,37 @@ export const AppRoutes: React.FC = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/roadmap" element={<CareerRoadmap />} />
 
-        {/* Student Protected Routes (CUJ 1) */}
+        {/* Student Protected Routes (CUJ 1: Voice Question Intake) */}
         <Route
           path="/student/voice-query"
           element={
-            <AuthGuard allowedRoles={['student', 'admin']}>
+            <ProtectedRoute allowedRoles={['student', 'admin']}>
               <VoiceQuery />
-            </AuthGuard>
+            </ProtectedRoute>
           }
         />
 
-        {/* Mentor Protected Routes (CUJ 3) */}
+        {/* Mentor Protected Routes (CUJ 3: Volunteer Doubt Board) */}
         <Route
           path="/mentor/doubt-board"
           element={
-            <AuthGuard allowedRoles={['mentor', 'admin']}>
+            <ProtectedRoute allowedRoles={['mentor', 'admin']}>
               <DoubtBoard />
-            </AuthGuard>
+            </ProtectedRoute>
           }
         />
 
-        {/* Admin Protected Routes */}
+        {/* Admin Protected Routes (Director Analytics Dashboard) */}
         <Route
           path="/admin/analytics"
           element={
-            <AuthGuard allowedRoles={['admin']}>
+            <ProtectedRoute allowedRoles={['admin']}>
               <AdminDashboard />
-            </AuthGuard>
+            </ProtectedRoute>
           }
         />
 
-        {/* Fallback */}
+        {/* Fallback Catch-All */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
