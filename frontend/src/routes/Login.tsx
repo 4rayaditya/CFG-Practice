@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import type { UserRole } from '../types';
 import { 
   Heart, 
@@ -34,7 +34,18 @@ export const Login: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
+  const getRoleDestination = (role: UserRole) => {
+    if (from && from !== '/login' && from !== '/403') return from;
+    switch (role) {
+      case 'mentor':
+        return '/mentor/doubt-board';
+      case 'admin':
+        return '/admin/analytics';
+      case 'student':
+      default:
+        return '/student/voice-query';
+    }
+  };
 
   const handleQuickFill = (role: UserRole) => {
     setSelectedRole(role);

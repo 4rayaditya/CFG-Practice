@@ -7,7 +7,9 @@ import { VoiceQuery } from './student/VoiceQuery';
 import { DoubtBoard } from './mentor/DoubtBoard';
 import { CareerRoadmap } from './roadmap/CareerRoadmap';
 import { AdminDashboard } from './admin/AdminDashboard';
-import { AuthGuard } from './AuthGuard';
+import { ProtectedRoute } from './AuthGuard';
+import { Forbidden } from './Forbidden';
+import { DashboardRedirect } from './DashboardRedirect';
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -17,38 +19,46 @@ export const AppRoutes: React.FC = () => {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/roadmap" element={<CareerRoadmap />} />
+        <Route path="/403" element={<Forbidden />} />
+        <Route path="/forbidden" element={<Forbidden />} />
+
+        {/* Central Dynamic Role Resolver */}
+        <Route path="/dashboard" element={<DashboardRedirect />} />
 
         {/* Student Protected Routes (CUJ 1) */}
         <Route
           path="/student/voice-query"
           element={
-            <AuthGuard allowedRoles={['student', 'admin']}>
+            <ProtectedRoute allowedRoles={['student', 'admin']}>
               <VoiceQuery />
-            </AuthGuard>
+            </ProtectedRoute>
           }
         />
+        <Route path="/student" element={<Navigate to="/student/voice-query" replace />} />
 
         {/* Mentor Protected Routes (CUJ 3) */}
         <Route
           path="/mentor/doubt-board"
           element={
-            <AuthGuard allowedRoles={['mentor', 'admin']}>
+            <ProtectedRoute allowedRoles={['mentor', 'admin']}>
               <DoubtBoard />
-            </AuthGuard>
+            </ProtectedRoute>
           }
         />
+        <Route path="/mentor" element={<Navigate to="/mentor/doubt-board" replace />} />
 
         {/* Admin Protected Routes */}
         <Route
           path="/admin/analytics"
           element={
-            <AuthGuard allowedRoles={['admin']}>
+            <ProtectedRoute allowedRoles={['admin']}>
               <AdminDashboard />
-            </AuthGuard>
+            </ProtectedRoute>
           }
         />
+        <Route path="/admin" element={<Navigate to="/admin/analytics" replace />} />
 
-        {/* Fallback */}
+        {/* Fallback Catch-All */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

@@ -1,44 +1,54 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import type { UserRole } from '../types';
-import { ShieldAlert } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
-interface AuthGuardProps {
+interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: UserRole[];
 }
 
-export const AuthGuard: React.FC<AuthGuardProps> = ({ children, allowedRoles }) => {
-  const { user, isAuthenticated } = useAuth();
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
+  const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+  // 1. Session Hydration: render smooth loading spinner
+  if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-        <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center mb-4">
-          <ShieldAlert className="w-8 h-8 text-amber-600" />
+      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4 space-y-4">
+        <div className="w-12 h-12 rounded-2xl bg-sky-50 border border-sky-200 flex items-center justify-center animate-pulse">
+          <Sparkles className="w-6 h-6 text-sky-600 animate-spin" />
         </div>
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">Restricted Section</h2>
-        <p className="text-slate-600 max-w-md mb-6 text-sm">
-          This area is designated for <strong className="text-amber-700">{allowedRoles.join(', ')}</strong> participants.
-          You are currently viewing as <span className="font-semibold text-sky-700 capitalize">{user.role}</span>.
-        </p>
-        <div className="flex gap-4">
-          <button
-            onClick={() => window.history.back()}
-            className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-sm font-medium transition"
-          >
-            Go Back
-          </button>
+        <div className="space-y-1">
+          <h3 className="text-sm font-bold text-slate-800">Verifying Session...</h3>
+          <p className="text-xs text-slate-500">Connecting securely with MentorMatch Auth</p>
         </div>
       </div>
     );
   }
 
+  // 2. Unauthenticated: Redirect to /login with return location
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // 3. Unauthorized Role: Redirect directly to /403 Forbidden page
+  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    return (
+      <Navigate 
+        to="/403" 
+        state={{ 
+          allowedRoles, 
+          attemptedPath: location.pathname 
+        }} 
+        replace 
+      />
+    );
+  }
+
   return <>{children}</>;
 };
+
+export const AuthGuard = ProtectedRoute;
+export default ProtectedRoute;
