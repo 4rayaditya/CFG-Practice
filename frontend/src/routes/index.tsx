@@ -7,7 +7,7 @@ import { VoiceQuery } from './student/VoiceQuery';
 import { DoubtBoard } from './mentor/DoubtBoard';
 import { CareerRoadmap } from './roadmap/CareerRoadmap';
 import { AdminDashboard } from './admin/AdminDashboard';
-import { ProtectedRoute } from './AuthGuard';
+import { ProtectedRoute } from './ProtectedRoute';
 import { Forbidden } from './Forbidden';
 import { DashboardRedirect } from './DashboardRedirect';
 
