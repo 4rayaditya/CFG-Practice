@@ -1,13 +1,15 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+
+from auth import get_current_user, require_role, AuthenticatedUser
 
 load_dotenv()
 
 app = FastAPI(
     title="MentorMatch AI API",
-    description="Backend API for MentorMatch AI platform (Person 3 Scaffolding)",
+    description="Backend API with local Supabase JWT verification and Role-Based Access Control",
     version="1.0.0"
 )
 
@@ -44,7 +46,56 @@ def health_check():
         "status": "healthy",
         "service": "MentorMatch AI Backend",
         "version": "1.0.0",
-        "cors_origins": origins
+        "cors_origins": origins,
+        "auth_middleware": "Local Supabase JWT (HS256)"
+    }
+
+
+# -----------------------------------------------------------------------------
+# Protected Route Examples (Person 1 Authentication Flow)
+# -----------------------------------------------------------------------------
+
+@app.get("/api/auth/me", response_model=AuthenticatedUser)
+def get_my_profile(current_user: AuthenticatedUser = Depends(get_current_user)):
+    """
+    Returns the authenticated user details decoded locally from the Supabase JWT.
+    """
+    return current_user
+
+
+@app.get("/api/student/dashboard")
+def student_dashboard(current_user: AuthenticatedUser = Depends(require_role(["student", "admin"]))):
+    """
+    Student-only endpoint (also accessible by admin).
+    """
+    return {
+        "message": f"Welcome to Student Dashboard, {current_user.email}",
+        "user_id": current_user.id,
+        "role": current_user.role,
+    }
+
+
+@app.get("/api/mentor/doubt-board")
+def mentor_doubt_board(current_user: AuthenticatedUser = Depends(require_role(["mentor", "admin"]))):
+    """
+    Mentor-only endpoint (also accessible by admin).
+    """
+    return {
+        "message": f"Welcome to Volunteer Mentor Hub, {current_user.email}",
+        "user_id": current_user.id,
+        "role": current_user.role,
+    }
+
+
+@app.get("/api/admin/metrics")
+def admin_metrics(current_user: AuthenticatedUser = Depends(require_role(["admin"]))):
+    """
+    Admin-only endpoint.
+    """
+    return {
+        "message": "Program Director Telemetry & Health",
+        "user_id": current_user.id,
+        "role": current_user.role,
     }
 
 
