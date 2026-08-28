@@ -2,144 +2,205 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Mic, 
-  Sparkles, 
-  Cpu, 
+  Heart, 
+  Users, 
   WifiOff, 
-  Zap, 
+  Sparkles, 
   ArrowRight, 
-  BarChart4 
+  CheckCircle2, 
+  GraduationCap, 
+  Compass, 
+  BookOpen,
+  MessageCircleHeart
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 
 export const Landing: React.FC = () => {
-  const { user } = useAuth();
-
   return (
-    <div className="space-y-20 py-6">
+    <div className="space-y-16 py-4">
       {/* Hero Section */}
-      <section className="relative text-center space-y-6 max-w-4xl mx-auto pt-6 pb-12">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-card border border-indigo-500/30 text-indigo-300 text-xs font-semibold uppercase tracking-wider mb-2">
-          <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-          <span>Offline-Capable Voice AI Mentorship</span>
+      <section className="relative text-center space-y-6 max-w-4xl mx-auto pt-6 pb-8">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-50 border border-sky-200 text-sky-800 text-xs font-semibold uppercase tracking-wider shadow-xs">
+          <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+          <span>Nonprofit Educational Mentorship Initiative</span>
         </div>
 
-        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-tight sm:leading-none">
-          Speak Your Doubt. <br />
-          <span className="bg-gradient-to-r from-cyan-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
-            Get Matched In Real-Time.
+        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-900 leading-tight sm:leading-none">
+          Every Student Deserves a Mentor. <br />
+          <span className="bg-gradient-to-r from-sky-600 via-teal-600 to-emerald-600 bg-clip-text text-transparent">
+            Speak Your Question. Learn & Grow.
           </span>
         </h1>
 
-        <p className="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto font-normal leading-relaxed">
-          Record complex coding doubts on the go—even offline. Powered by OpenAI Whisper, 
-          GPT-4o-mini structured parsing, and Supabase <span className="text-cyan-400 font-mono">pgvector</span> matching.
+        <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto font-normal leading-relaxed">
+          We connect ambitious students with caring volunteer mentors across the globe. 
+          Simply speak your doubts aloud—even without an active internet connection—and receive personalized guidance to unlock your full potential.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
           <Link
             to="/student/voice-query"
-            className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition duration-200"
+            className="flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold shadow-md shadow-sky-600/20 hover:-translate-y-0.5 transition duration-200"
           >
             <Mic className="w-5 h-5" />
-            <span>Try Voice Intake</span>
+            <span>Ask a Question by Voice</span>
             <ArrowRight className="w-4 h-4 ml-1" />
           </Link>
 
           <Link
             to="/mentor/doubt-board"
-            className="flex items-center gap-2 px-6 py-3.5 rounded-xl glass-card hover:bg-slate-800/80 border border-slate-700 text-slate-200 font-semibold hover:-translate-y-0.5 transition duration-200"
+            className="flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 font-semibold shadow-xs hover:-translate-y-0.5 transition duration-200"
           >
-            <span>Mentor Doubt Board</span>
+            <Users className="w-5 h-5 text-emerald-600" />
+            <span>Volunteer as a Mentor</span>
           </Link>
 
           <Link
-            to="/admin/analytics"
-            className="flex items-center gap-2 px-6 py-3.5 rounded-xl glass-card hover:bg-slate-800/80 border border-slate-700 text-slate-200 font-semibold hover:-translate-y-0.5 transition duration-200"
+            to="/roadmap"
+            className="flex items-center gap-2 px-5 py-3.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium hover:-translate-y-0.5 transition duration-200"
           >
-            <BarChart4 className="w-5 h-5 text-indigo-400" />
-            <span>Admin Analytics</span>
+            <Compass className="w-5 h-5 text-sky-600" />
+            <span>Explore Learning Paths</span>
           </Link>
         </div>
-
-        {/* Current Active Persona Banner */}
-        <div className="mt-8 p-3 rounded-xl glass-card max-w-md mx-auto flex items-center justify-between border border-slate-800 text-xs">
-          <span className="text-slate-400">Current active persona:</span>
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-cyan-400 capitalize">{user?.role || 'Guest'}</span>
-            <span className="text-slate-500">({user?.name})</span>
-          </div>
-        </div>
       </section>
 
-      {/* 3 Core Architecture Pillars */}
+      {/* 3 Core Empowering Pillars */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-card p-6 rounded-2xl border border-slate-800/80 hover:border-indigo-500/40 transition duration-300">
-          <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-4 text-indigo-400">
+        <div className="light-card light-card-hover p-6 rounded-2xl border border-slate-200/80">
+          <div className="w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center mb-4 text-sky-600">
+            <Mic className="w-6 h-6" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 mb-2">Voice-First Accessibility</h3>
+          <p className="text-sm text-slate-600 leading-relaxed">
+            No need to struggle typing complex equations or technical roadblocks. Just hit record and explain your question naturally in your own words.
+          </p>
+        </div>
+
+        <div className="light-card light-card-hover p-6 rounded-2xl border border-slate-200/80">
+          <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-4 text-emerald-600">
             <WifiOff className="w-6 h-6" />
           </div>
-          <h3 className="text-lg font-bold text-slate-100 mb-2">CUJ 1: Offline Voice Sync</h3>
-          <p className="text-sm text-slate-400 leading-relaxed">
-            Record doubts anywhere with zero connectivity. Audio is safely queued in IndexedDB and automatically synced to Whisper when connection restores.
+          <h3 className="text-lg font-bold text-slate-900 mb-2">Works Anywhere (Offline-Ready)</h3>
+          <p className="text-sm text-slate-600 leading-relaxed">
+            Studying on the bus or in low-connectivity areas? Record your thoughts anytime. Our app saves your questions and sends them automatically once you reconnect.
           </p>
         </div>
 
-        <div className="glass-card p-6 rounded-2xl border border-slate-800/80 hover:border-cyan-500/40 transition duration-300">
-          <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-4 text-cyan-400">
-            <Cpu className="w-6 h-6" />
+        <div className="light-card light-card-hover p-6 rounded-2xl border border-slate-200/80">
+          <div className="w-12 h-12 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center mb-4 text-purple-600">
+            <Heart className="w-6 h-6 fill-purple-100" />
           </div>
-          <h3 className="text-lg font-bold text-slate-100 mb-2">CUJ 2: Semantic pgvector Match</h3>
-          <p className="text-sm text-slate-400 leading-relaxed">
-            GPT-4o-mini extracts key technical keywords and generates high-dimensional embeddings to match doubts with the top 3 domain mentors in milliseconds.
-          </p>
-        </div>
-
-        <div className="glass-card p-6 rounded-2xl border border-slate-800/80 hover:border-purple-500/40 transition duration-300">
-          <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-4 text-purple-400">
-            <Zap className="w-6 h-6" />
-          </div>
-          <h3 className="text-lg font-bold text-slate-100 mb-2">CUJ 3: Real-Time Resolution</h3>
-          <p className="text-sm text-slate-400 leading-relaxed">
-            Mentors answer from a curated board. Supabase Realtime delivers instantaneous notifications to student devices with live answer streaming.
+          <h3 className="text-lg font-bold text-slate-900 mb-2">Dedicated Caring Mentors</h3>
+          <p className="text-sm text-slate-600 leading-relaxed">
+            Get matched with experienced educators and industry volunteers who provide constructive, compassionate, and step-by-step guidance.
           </p>
         </div>
       </section>
 
-      {/* Engineering Architecture Breakdown */}
-      <section className="glass-panel rounded-3xl p-8 border border-slate-800 space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-          <div>
-            <h2 className="text-2xl font-bold text-white">4-Engineer Architectural Alignment</h2>
-            <p className="text-sm text-slate-400">Collaborative fullstack & AI platform split (PRD.md)</p>
+      {/* How It Works (Simple 3 Steps) */}
+      <section className="bg-white rounded-3xl p-8 sm:p-10 border border-slate-200 shadow-xs space-y-8">
+        <div className="text-center max-w-xl mx-auto space-y-2">
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">How MentorMatch Empowers You</h2>
+          <p className="text-sm text-slate-600">A seamless, friendly learning journey in three simple steps</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+          <div className="space-y-3 relative text-center sm:text-left">
+            <div className="w-10 h-10 rounded-full bg-sky-100 text-sky-700 font-bold text-sm flex items-center justify-center mx-auto sm:mx-0">
+              1
+            </div>
+            <h4 className="text-base font-bold text-slate-900">Speak Your Question</h4>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Tap the microphone whenever you are stuck on a concept, assignment, or project roadblock.
+            </p>
           </div>
-          <div className="flex items-center gap-2 text-xs font-mono bg-indigo-950/60 text-indigo-300 border border-indigo-800 px-3 py-1.5 rounded-lg">
-            <span>You are Person 3: UI & Analytics</span>
+
+          <div className="space-y-3 relative text-center sm:text-left">
+            <div className="w-10 h-10 rounded-full bg-teal-100 text-teal-700 font-bold text-sm flex items-center justify-center mx-auto sm:mx-0">
+              2
+            </div>
+            <h4 className="text-base font-bold text-slate-900">Intelligent Matching</h4>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Our intelligent engine analyzes your question and routes it directly to mentors specialized in your topic.
+            </p>
+          </div>
+
+          <div className="space-y-3 relative text-center sm:text-left">
+            <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 font-bold text-sm flex items-center justify-center mx-auto sm:mx-0">
+              3
+            </div>
+            <h4 className="text-base font-bold text-slate-900">Learn & Move Forward</h4>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Receive structured, encouraging feedback and interactive roadmaps to master your subject with confidence.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Community Impact & Testimonial Highlight */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-gradient-to-br from-sky-500 to-sky-700 text-white rounded-3xl p-8 flex flex-col justify-between space-y-6 shadow-md shadow-sky-600/10">
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-full text-xs font-semibold">
+              <MessageCircleHeart className="w-3.5 h-3.5" />
+              <span>Student Story</span>
+            </div>
+            <p className="text-lg sm:text-xl font-medium leading-relaxed italic">
+              "Being able to record my questions during my commute with no internet, and having a mentor answer by the time I get home, has completely changed how I learn."
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">
+              AC
+            </div>
+            <div>
+              <div className="font-semibold text-sm">Alex Chen</div>
+              <div className="text-xs text-sky-100">First-Generation Computer Science Student</div>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
-            <div className="text-xs font-mono text-cyan-400 mb-1">Person 1</div>
-            <div className="font-semibold text-slate-200 text-sm">DB & Auth</div>
-            <div className="text-xs text-slate-400 mt-2">Supabase PostgreSQL, pgvector schema, Row Level Security & JWTs.</div>
+        <div className="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-3xl p-8 flex flex-col justify-between space-y-6 shadow-md shadow-emerald-600/10">
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-full text-xs font-semibold">
+              <GraduationCap className="w-3.5 h-3.5" />
+              <span>Mentor Perspective</span>
+            </div>
+            <p className="text-lg sm:text-xl font-medium leading-relaxed italic">
+              "Volunteering with MentorMatch lets me give back directly to enthusiastic students who just need a guiding hand and a little encouragement."
+            </p>
           </div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">
+              SJ
+            </div>
+            <div>
+              <div className="font-semibold text-sm">Dr. Sarah Jenkins</div>
+              <div className="text-xs text-emerald-100">Volunteer Mentor & Senior Engineer</div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
-            <div className="text-xs font-mono text-indigo-400 mb-1">Person 2</div>
-            <div className="font-semibold text-slate-200 text-sm">AI & Vector Engine</div>
-            <div className="text-xs text-slate-400 mt-2">OpenAI Whisper API, GPT-4o-mini structuring & vector embeddings.</div>
-          </div>
-
-          <div className="p-4 rounded-xl bg-indigo-950/40 border border-indigo-500/40 glow-indigo">
-            <div className="text-xs font-mono text-cyan-300 font-bold mb-1">Person 3 (Current)</div>
-            <div className="font-semibold text-white text-sm">UI, Routing & Analytics</div>
-            <div className="text-xs text-indigo-200 mt-2">Vite SPA, Tailwind CSS, AuthGuards, Recharts Dashboard & UI Flow.</div>
-          </div>
-
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
-            <div className="text-xs font-mono text-purple-400 mb-1">Person 4</div>
-            <div className="font-semibold text-slate-200 text-sm">PWA & Real-Time</div>
-            <div className="text-xs text-slate-400 mt-2">vite-plugin-pwa, IndexedDB sync, Supabase Realtime listeners.</div>
-          </div>
+      {/* Call to Action Banner */}
+      <section className="light-panel rounded-3xl p-8 sm:p-10 border border-slate-200 text-center space-y-4">
+        <h3 className="text-2xl font-bold text-slate-900">Ready to start your mentorship journey?</h3>
+        <p className="text-sm text-slate-600 max-w-lg mx-auto">
+          Whether you are a student looking for guidance or an expert wanting to inspire the next generation, we welcome you to our community.
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
+          <Link
+            to="/student/voice-query"
+            className="px-6 py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm shadow-sm transition"
+          >
+            Start Learning as a Student
+          </Link>
+          <Link
+            to="/mentor/doubt-board"
+            className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm shadow-sm transition"
+          >
+            Sign Up as a Volunteer Mentor
+          </Link>
         </div>
       </section>
     </div>

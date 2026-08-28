@@ -6,7 +6,9 @@ import {
   Wifi, 
   WifiOff, 
   Sparkles, 
-  Volume2
+  Volume2,
+  CheckCircle2,
+  HelpCircle
 } from 'lucide-react';
 
 export const VoiceQuery: React.FC = () => {
@@ -82,16 +84,16 @@ export const VoiceQuery: React.FC = () => {
     setIsProcessing(true);
 
     try {
-      // If offline, cue IndexedDB simulation
+      // If offline, cue storage simulation
       if (!isOnline) {
         setTimeout(() => {
           setIsProcessing(false);
           setStructuredOutput({
-            transcript: 'Offline voice doubt recorded: "How do I optimize pgvector index for large dataset queries?"',
-            summary: 'Queued into IndexedDB for automatic background sync upon reconnection.',
-            category: 'PostgreSQL / pgvector',
-            tags: ['offline-queued', 'database', 'indexing'],
-            urgency: 'Medium',
+            transcript: 'I am practicing algorithmic problem solving and getting confused with dynamic programming memoization.',
+            summary: 'Your audio is safely saved on your device. It will automatically match you with a mentor as soon as your internet reconnects.',
+            category: 'Computer Science / Algorithms',
+            tags: ['offline-saved', 'algorithms', 'student-doubt'],
+            urgency: 'Standard',
           });
         }, 1200);
         return;
@@ -101,11 +103,11 @@ export const VoiceQuery: React.FC = () => {
       setTimeout(() => {
         setIsProcessing(false);
         setStructuredOutput({
-          transcript: 'I am getting a CORS error between my FastAPI backend and Vite React frontend when sending POST requests with FormData.',
-          summary: 'FastAPI CORS middleware configuration issue for cross-origin multipart requests.',
-          category: 'Web Architecture / FastAPI',
-          tags: ['fastapi', 'cors', 'vite', 'python'],
-          urgency: 'High (P0)',
+          transcript: 'I am preparing my first resume for technical internships and need advice on how to highlight personal open source projects.',
+          summary: 'Student seeking personalized career and project portfolio guidance.',
+          category: 'Career & Projects',
+          tags: ['career-guidance', 'internships', 'portfolio'],
+          urgency: 'Priority',
         });
       }, 1500);
     } catch (error) {
@@ -119,75 +121,75 @@ export const VoiceQuery: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 text-xs font-mono text-cyan-400 uppercase tracking-widest mb-1">
-            <span>CUJ 1 • Student Voice Intake</span>
+          <div className="inline-flex items-center gap-2 text-xs font-semibold text-sky-700 uppercase tracking-wider mb-1">
+            <span>Student Voice Assistance</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-white">Speak Your Doubt</h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Voice-enabled intake with OpenAI Whisper transcription and offline background sync.
+          <h1 className="text-3xl font-extrabold text-slate-900">Ask Your Question</h1>
+          <p className="text-sm text-slate-600 mt-1">
+            Speak naturally about whatever you are working on. We will organize your question and match you with a caring mentor.
           </p>
         </div>
 
         {/* Network & Offline Status Indicator */}
         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold ${
           isOnline
-            ? 'bg-emerald-950/50 text-emerald-400 border-emerald-800'
-            : 'bg-amber-950/50 text-amber-400 border-amber-800 animate-pulse'
+            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+            : 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse'
         }`}>
-          {isOnline ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
-          <span>{isOnline ? 'Online (Direct Whisper API)' : 'Offline Mode (IndexedDB Queued)'}</span>
+          {isOnline ? <Wifi className="w-4 h-4 text-emerald-600" /> : <WifiOff className="w-4 h-4 text-amber-600" />}
+          <span>{isOnline ? 'Online (Ready to Match)' : 'Offline Mode (Saved to Device)'}</span>
         </div>
       </div>
 
       {/* Voice Recording Card */}
-      <div className="glass-panel rounded-3xl p-8 border border-slate-800 text-center relative overflow-hidden">
+      <div className="light-panel rounded-3xl p-8 border border-slate-200 text-center relative overflow-hidden">
         <div className="max-w-lg mx-auto space-y-6">
           <div className="relative">
             {/* Animated Pulse Ring while recording */}
             {isRecording && (
-              <div className="absolute inset-0 m-auto w-32 h-32 rounded-full bg-cyan-500/20 animate-ping" />
+              <div className="absolute inset-0 m-auto w-32 h-32 rounded-full bg-rose-500/10 animate-ping" />
             )}
 
             <button
               onClick={isRecording ? stopRecording : startRecording}
-              className={`relative z-10 w-28 h-28 mx-auto rounded-full flex flex-col items-center justify-center transition-all duration-300 shadow-2xl ${
+              className={`relative z-10 w-28 h-28 mx-auto rounded-full flex flex-col items-center justify-center transition-all duration-300 shadow-md ${
                 isRecording
-                  ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/50 scale-105 animate-pulse'
-                  : 'bg-gradient-to-tr from-indigo-600 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white shadow-indigo-500/40 hover:scale-105'
+                  ? 'bg-rose-600 hover:bg-rose-500 text-white scale-105 animate-pulse'
+                  : 'bg-sky-600 hover:bg-sky-500 text-white hover:scale-105'
               }`}
             >
               {isRecording ? (
                 <>
-                  <Square className="w-9 h-9 mb-1 fill-current" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider">Stop</span>
+                  <Square className="w-8 h-8 mb-1 fill-current" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider">Stop</span>
                 </>
               ) : (
                 <>
-                  <Mic className="w-9 h-9 mb-1" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider">Record</span>
+                  <Mic className="w-8 h-8 mb-1" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider">Record</span>
                 </>
               )}
             </button>
           </div>
 
           <div>
-            <h3 className="text-lg font-bold text-white">
-              {isRecording ? 'Listening to your doubt...' : audioBlob ? 'Voice Doubt Captured!' : 'Tap Microphone to Speak'}
+            <h3 className="text-lg font-bold text-slate-900">
+              {isRecording ? 'Listening to your question...' : audioBlob ? 'Question Recorded!' : 'Tap the Microphone to Speak'}
             </h3>
-            <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+            <p className="text-xs text-slate-600 mt-1 max-w-sm mx-auto">
               {isRecording
-                ? 'Speak clearly about your error, code block, or concept question.'
-                : 'Supports offline caching. Audio is transcribed via Whisper and structured via GPT-4o-mini.'}
+                ? 'Explain your roadblock, concept question, or homework problem freely.'
+                : 'Works even when offline. Your voice is transcribed and organized for volunteer mentors.'}
             </p>
           </div>
 
           {/* Audio preview & actions */}
           {audioBlob && (
-            <div className="p-4 rounded-2xl glass-card border border-slate-700/80 space-y-3">
-              <div className="flex items-center justify-between text-xs text-slate-300">
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+              <div className="flex items-center justify-between text-xs text-slate-600">
                 <div className="flex items-center gap-2">
-                  <Volume2 className="w-4 h-4 text-cyan-400" />
-                  <span>Recorded Audio Clip (WAV)</span>
+                  <Volume2 className="w-4 h-4 text-sky-600" />
+                  <span>Voice Clip Ready</span>
                 </div>
                 <span className="font-mono text-slate-500">{(audioBlob.size / 1024).toFixed(1)} KB</span>
               </div>
@@ -196,17 +198,17 @@ export const VoiceQuery: React.FC = () => {
                 <button
                   onClick={handleSubmitDoubt}
                   disabled={isProcessing}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-sm shadow-lg shadow-cyan-500/25 transition disabled:opacity-50"
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm shadow-xs transition disabled:opacity-50"
                 >
                   {isProcessing ? (
                     <>
                       <Sparkles className="w-4 h-4 animate-spin" />
-                      <span>Transcribing & Matching...</span>
+                      <span>Matching with Mentors...</span>
                     </>
                   ) : (
                     <>
                       <Send className="w-4 h-4" />
-                      <span>{isOnline ? 'Process & Match Mentors' : 'Queue Offline'}</span>
+                      <span>{isOnline ? 'Submit to Mentors' : 'Save for Offline Sync'}</span>
                     </>
                   )}
                 </button>
@@ -216,35 +218,39 @@ export const VoiceQuery: React.FC = () => {
         </div>
       </div>
 
-      {/* AI Structured Output & Vector Match Preview */}
+      {/* Structured Output & Match Preview */}
       {structuredOutput && (
-        <div className="glass-panel rounded-3xl p-6 border border-slate-800 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="light-panel rounded-3xl p-6 border border-slate-200 space-y-4 shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-cyan-400" />
-              <h3 className="font-bold text-white text-base">AI Structured Parsing (GPT-4o-mini)</h3>
+              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+              <h3 className="font-bold text-slate-900 text-base">Question Processed Successfully</h3>
             </div>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-cyan-950/60 text-cyan-400 border border-cyan-800/80 font-mono">
-              Category: {structuredOutput.category}
+            <span className="text-xs px-3 py-1 rounded-full bg-sky-50 text-sky-700 border border-sky-200 font-medium">
+              Topic: {structuredOutput.category}
             </span>
           </div>
 
           <div className="space-y-3 text-sm">
             <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-1">Whisper Transcription:</span>
-              <p className="text-slate-200 bg-slate-900/60 p-3 rounded-xl border border-slate-800 font-mono text-xs">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 block mb-1">
+                Your Spoken Words:
+              </span>
+              <p className="text-slate-800 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs italic">
                 "{structuredOutput.transcript}"
               </p>
             </div>
 
             <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-1">Structured Summary:</span>
-              <p className="text-slate-300">{structuredOutput.summary}</p>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 block mb-1">
+                Mentorship Summary:
+              </span>
+              <p className="text-slate-700 text-sm">{structuredOutput.summary}</p>
             </div>
 
             <div className="flex flex-wrap gap-2 pt-2">
               {structuredOutput.tags?.map((tag) => (
-                <span key={tag} className="px-2.5 py-1 rounded-lg bg-indigo-950/60 text-indigo-300 border border-indigo-800/60 text-xs font-mono">
+                <span key={tag} className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 text-xs">
                   #{tag}
                 </span>
               ))}

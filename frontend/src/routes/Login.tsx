@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import type { UserRole } from '../types';
-import { Sparkles, Shield, GraduationCap, Briefcase, Lock } from 'lucide-react';
+import { Heart, Shield, GraduationCap, Users, Lock } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const { login, setRole } = useAuth();
@@ -24,19 +24,19 @@ export const Login: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto py-12 px-4">
-      <div className="glass-panel p-8 rounded-3xl border border-slate-800 shadow-2xl">
+      <div className="light-panel p-8 rounded-3xl border border-slate-200 shadow-lg">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-cyan-400 mx-auto flex items-center justify-center shadow-lg shadow-indigo-500/25 mb-3">
-            <Sparkles className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 rounded-2xl bg-sky-600 mx-auto flex items-center justify-center shadow-md shadow-sky-600/20 mb-3">
+            <Heart className="w-6 h-6 text-white fill-white/20" />
           </div>
-          <h2 className="text-2xl font-bold text-white">Sign In to MentorMatch AI</h2>
-          <p className="text-xs text-slate-400 mt-1">Select your role to explore the role-based routing</p>
+          <h2 className="text-2xl font-bold text-slate-900">Welcome to MentorMatch</h2>
+          <p className="text-xs text-slate-600 mt-1">Select your role to explore the community portal</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">
-              Select Role / Persona
+            <label className="block text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wider">
+              Choose Profile
             </label>
             <div className="grid grid-cols-3 gap-2">
               <button
@@ -44,11 +44,11 @@ export const Login: React.FC = () => {
                 onClick={() => setSelectedRole('student')}
                 className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition text-xs font-medium ${
                   selectedRole === 'student'
-                    ? 'bg-indigo-600/20 border-indigo-500 text-cyan-300'
-                    : 'glass-card border-slate-800 text-slate-400 hover:border-slate-700'
+                    ? 'bg-sky-50 border-sky-500 text-sky-800 font-semibold'
+                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                 }`}
               >
-                <GraduationCap className="w-5 h-5" />
+                <GraduationCap className="w-5 h-5 text-sky-600" />
                 <span>Student</span>
               </button>
 
@@ -57,11 +57,11 @@ export const Login: React.FC = () => {
                 onClick={() => setSelectedRole('mentor')}
                 className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition text-xs font-medium ${
                   selectedRole === 'mentor'
-                    ? 'bg-indigo-600/20 border-indigo-500 text-cyan-300'
-                    : 'glass-card border-slate-800 text-slate-400 hover:border-slate-700'
+                    ? 'bg-emerald-50 border-emerald-500 text-emerald-800 font-semibold'
+                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                 }`}
               >
-                <Briefcase className="w-5 h-5" />
+                <Users className="w-5 h-5 text-emerald-600" />
                 <span>Mentor</span>
               </button>
 
@@ -70,18 +70,18 @@ export const Login: React.FC = () => {
                 onClick={() => setSelectedRole('admin')}
                 className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition text-xs font-medium ${
                   selectedRole === 'admin'
-                    ? 'bg-indigo-600/20 border-indigo-500 text-cyan-300'
-                    : 'glass-card border-slate-800 text-slate-400 hover:border-slate-700'
+                    ? 'bg-purple-50 border-purple-500 text-purple-800 font-semibold'
+                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                 }`}
               >
-                <Shield className="w-5 h-5" />
-                <span>Admin</span>
+                <Shield className="w-5 h-5 text-purple-600" />
+                <span>Director</span>
               </button>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">Email Address</label>
+            <label className="block text-xs font-medium text-slate-700 mb-1">Email Address</label>
             <input
               type="email"
               disabled
@@ -90,30 +90,30 @@ export const Login: React.FC = () => {
                   ? 'alex.chen@student.edu'
                   : selectedRole === 'mentor'
                   ? 'sarah.j@techmentor.ai'
-                  : 'admin@mentormatch.ai'
+                  : 'admin@mentormatch.org'
               }
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-300 text-sm font-mono focus:outline-none"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-sm font-sans focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">Security Token</label>
+            <label className="block text-xs font-medium text-slate-700 mb-1">Security Token</label>
             <div className="relative">
               <input
                 type="password"
                 disabled
                 value="••••••••••••"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-300 text-sm font-mono focus:outline-none"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-sm font-sans focus:outline-none"
               />
-              <Lock className="w-4 h-4 text-slate-500 absolute right-3.5 top-3" />
+              <Lock className="w-4 h-4 text-slate-400 absolute right-3.5 top-3" />
             </div>
           </div>
 
           <button
             type="submit"
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 transition duration-200"
+            className="w-full py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm shadow-sm transition duration-200"
           >
-            Sign In as {selectedRole.toUpperCase()}
+            Enter as {selectedRole === 'admin' ? 'Program Director' : selectedRole === 'mentor' ? 'Volunteer Mentor' : 'Student'}
           </button>
         </form>
       </div>
