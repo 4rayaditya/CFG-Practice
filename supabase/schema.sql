@@ -259,39 +259,46 @@ ALTER TABLE public.mentors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.doubts ENABLE ROW LEVEL SECURITY;
 
 -- 8.1 Profiles Policies
+DROP POLICY IF EXISTS "Public profiles are viewable by authenticated users" ON public.profiles;
 CREATE POLICY "Public profiles are viewable by authenticated users"
     ON public.profiles FOR SELECT
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
 CREATE POLICY "Users can update their own profile"
     ON public.profiles FOR UPDATE
     TO authenticated
     USING (auth.uid() = id);
 
 -- 8.2 Students Policies
+DROP POLICY IF EXISTS "Students records viewable by authenticated users" ON public.students;
 CREATE POLICY "Students records viewable by authenticated users"
     ON public.students FOR SELECT
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Students can update their own student profile" ON public.students;
 CREATE POLICY "Students can update their own student profile"
     ON public.students FOR UPDATE
     TO authenticated
     USING (auth.uid() = id);
 
 -- 8.3 Mentors Policies
+DROP POLICY IF EXISTS "Mentor profiles are publicly viewable" ON public.mentors;
 CREATE POLICY "Mentor profiles are publicly viewable"
     ON public.mentors FOR SELECT
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Mentors can update their own mentor record" ON public.mentors;
 CREATE POLICY "Mentors can update their own mentor record"
     ON public.mentors FOR UPDATE
     TO authenticated
     USING (auth.uid() = id);
 
 -- 8.4 Doubts Policies
+DROP POLICY IF EXISTS "Students can view their own doubts" ON public.doubts;
 CREATE POLICY "Students can view their own doubts"
     ON public.doubts FOR SELECT
     TO authenticated
@@ -305,11 +312,13 @@ CREATE POLICY "Students can view their own doubts"
         )
     );
 
+DROP POLICY IF EXISTS "Students can insert their own doubts" ON public.doubts;
 CREATE POLICY "Students can insert their own doubts"
     ON public.doubts FOR INSERT
     TO authenticated
     WITH CHECK (auth.uid() = student_id);
 
+DROP POLICY IF EXISTS "Students and assigned mentors can update doubts" ON public.doubts;
 CREATE POLICY "Students and assigned mentors can update doubts"
     ON public.doubts FOR UPDATE
     TO authenticated
