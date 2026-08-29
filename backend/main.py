@@ -6,9 +6,15 @@ from fastapi import FastAPI, Depends, UploadFile, File, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
-import openai
+from groq import Groq, GroqError
 
 from auth import get_current_user, require_role, AuthenticatedUser
+from classifier import (
+    ClassifyDoubtRequest,
+    StructuredDoubt,
+    ClassifyDoubtResponse,
+    classify_transcript
+)
 
 load_dotenv()
 
@@ -28,7 +34,7 @@ ALLOWED_CONTENT_TYPES = {
     "audio/mp4",
     "application/octet-stream",
 }
-MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024  # 25MB (OpenAI Whisper file limit)
+MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024  # 25MB (Whisper audio file limit)
 MIN_FILE_SIZE_BYTES = 100  # Minimum size to reject empty/corrupted uploads
 
 
@@ -36,6 +42,7 @@ class AudioProcessingResponse(BaseModel):
     """Structured JSON response returned upon successful audio transcription."""
     success: bool = True
     transcript: str
+    structured_doubt: Optional[StructuredDoubt] = None
     file_name: str
     file_size_bytes: int
     audio_format: str
@@ -47,7 +54,7 @@ class AudioProcessingResponse(BaseModel):
 
 app = FastAPI(
     title="MentorMatch AI API",
-    description="Backend API with local Supabase JWT verification, OpenAI Whisper speech transcription, and Role-Based Access Control",
+    description="Backend API with local Supabase JWT verification, Groq Whisper (whisper-large-v3) speech transcription, Groq Llama 3 doubt classification, and Role-Based Access Control",
     version="1.0.0"
 )
 
@@ -80,19 +87,20 @@ def read_root():
 
 @app.get("/api/health")
 def health_check():
-    openai_configured = bool(os.getenv("OPENAI_API_KEY") and not os.getenv("OPENAI_API_KEY").startswith("your-"))
+    groq_configured = bool(os.getenv("GROQ_API_KEY") and not os.getenv("GROQ_API_KEY").startswith("gsk_your"))
     return {
         "status": "healthy",
         "service": "MentorMatch AI Backend",
         "version": "1.0.0",
         "cors_origins": origins,
         "auth_middleware": "Local Supabase JWT (HS256)",
-        "openai_whisper_configured": openai_configured
+        "groq_whisper_configured": groq_configured,
+        "groq_llama_classifier_configured": groq_configured
     }
 
 
 # -----------------------------------------------------------------------------
-# Person 2: Voice-to-Text AI Audio Processing Endpoint (CUJ 1)
+# Person 2: Voice-to-Text AI Audio Processing Endpoint (CUJ 1 - Groq Whisper)
 # -----------------------------------------------------------------------------
 
 @app.post("/api/process-audio", response_model=AudioProcessingResponse)
@@ -102,8 +110,8 @@ async def process_audio(
 ):
     """
     Accepts multipart audio uploads, validates file integrity, authenticates via Supabase JWT,
-    and passes the audio buffer to the OpenAI Whisper API (whisper-1) for speech transcription.
-    Returns clean transcript and processing latency metrics.
+    and passes the audio buffer to the free Groq API (whisper-large-v3) for speech transcription.
+    Automatically classifies the transcript into a structured doubt payload.
     """
     start_time = time.perf_counter()
 
@@ -144,25 +152,23 @@ async def process_audio(
             detail=f"Audio file exceeds maximum size limit of {MAX_FILE_SIZE_BYTES // (1024 * 1024)}MB.",
         )
 
-    # 3. Transcribe with OpenAI Whisper API
-    openai_key = os.getenv("OPENAI_API_KEY", "").strip()
+    # 3. Transcribe with Groq API (whisper-large-v3)
+    groq_key = os.getenv("GROQ_API_KEY", "").strip()
     transcript_text = ""
 
-    if openai_key and not openai_key.startswith("your-"):
+    if groq_key and not groq_key.startswith("gsk_your"):
         try:
-            client = openai.OpenAI(api_key=openai_key)
-            audio_buffer = io.BytesIO(audio_bytes)
-            audio_buffer.name = file.filename or f"audio{file_ext}"
-
+            client = Groq(api_key=groq_key)
             transcription = client.audio.transcriptions.create(
-                model="whisper-1",
-                file=audio_buffer,
+                file=(file.filename or f"audio{file_ext}", audio_bytes),
+                model="whisper-large-v3",
+                response_format="json"
             )
             transcript_text = getattr(transcription, "text", str(transcription)).strip()
-        except openai.APIError as api_err:
+        except GroqError as groq_err:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"OpenAI Whisper API error: {api_err.message}",
+                detail=f"Groq Whisper API error: {str(groq_err)}",
             )
         except Exception as exc:
             raise HTTPException(
@@ -176,17 +182,52 @@ async def process_audio(
             "dynamic programming memoization and state transitions in grid traversal."
         )
 
+    # 4. Extract Structured Doubt via Classifier Pipeline
+    structured_doubt = classify_transcript(transcript_text)
     processing_time_ms = round((time.perf_counter() - start_time) * 1000, 2)
 
     return AudioProcessingResponse(
         success=True,
         transcript=transcript_text,
+        structured_doubt=structured_doubt,
         file_name=file.filename,
         file_size_bytes=file_size,
         audio_format=file.content_type or f"audio/{file_ext.lstrip('.')}",
         processing_time_ms=processing_time_ms,
         user_id=current_user.id,
         user_role=current_user.role,
+    )
+
+
+# -----------------------------------------------------------------------------
+# Person 2: Doubt Classification Pipeline (CUJ 1 & CUJ 2 - Groq Llama 3)
+# -----------------------------------------------------------------------------
+
+@app.post("/api/classify-doubt", response_model=ClassifyDoubtResponse)
+def classify_doubt_endpoint(
+    payload: ClassifyDoubtRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Accepts raw speech-to-text transcript text, passes it to Groq Llama 3 with JSON mode,
+    and returns a structured doubt object (title, description, category, tags, urgency).
+    """
+    start_time = time.perf_counter()
+
+    if not payload.transcript or not payload.transcript.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Transcript text cannot be empty.",
+        )
+
+    structured_doubt = classify_transcript(payload.transcript)
+    processing_time_ms = round((time.perf_counter() - start_time) * 1000, 2)
+
+    return ClassifyDoubtResponse(
+        success=True,
+        raw_transcript=payload.transcript,
+        structured_doubt=structured_doubt,
+        processing_time_ms=processing_time_ms,
     )
 
 
