@@ -55,6 +55,49 @@ export const api = {
     return await res.json();
   },
 
+  async matchMentors(params: {
+    title: string;
+    description?: string;
+    category?: string;
+    match_count?: number;
+    match_threshold?: number;
+  }): Promise<{
+    success: boolean;
+    query_title: string;
+    query_category?: string;
+    embedding_dimensions: number;
+    matches: Array<{
+      mentor_id: string;
+      full_name: string;
+      headline: string;
+      bio?: string;
+      expertise_tags: string[];
+      rating: number;
+      similarity: number;
+      match_percentage: string;
+    }>;
+    processing_time_ms: number;
+  }> {
+    const token = localStorage.getItem('mm_auth_token');
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_BASE_URL}/api/match-mentor`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ detail: 'Mentor matching failed' }));
+      throw new Error(errorData.detail || `Mentor matching failed with status ${res.status}`);
+    }
+    return await res.json();
+  },
+
   async generateRoadmap(goal: string): Promise<Record<string, unknown>> {
     const res = await fetch(`${API_BASE_URL}/api/roadmap`, {
       method: 'POST',

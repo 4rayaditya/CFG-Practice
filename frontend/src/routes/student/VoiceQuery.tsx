@@ -10,11 +10,50 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { AudioRecorder } from '../../components/voice/AudioRecorder';
+import { MentorMatchGrid, Mentor } from '../../components/mentors/MentorMatchGrid';
 import { api } from '../../services/api';
+
+const DEFAULT_MATCHED_MENTORS: Mentor[] = [
+  {
+    id: '00000000-0000-0000-0000-000000000002',
+    fullName: 'Dr. Sarah Jenkins',
+    headline: 'Lead Frontend Architect & React Core Contributor',
+    bio: '12+ years building accessible web applications, state management architectures, and React component libraries.',
+    expertiseTags: ['React', 'Frontend', 'TypeScript', 'Tailwind CSS', 'Web Accessibility'],
+    rating: 4.96,
+    reviewsCount: 142,
+    matchScore: 96,
+    isAvailable: true,
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000003',
+    fullName: 'Elena Rostova',
+    headline: 'Senior Staff Web Engineer & Media Streaming Specialist',
+    bio: 'Specializes in Web Audio API, real-time audio visualization, MediaRecorder streams, and modern React performance.',
+    expertiseTags: ['Frontend', 'Web Audio', 'MediaRecorder', 'TypeScript', 'React'],
+    rating: 4.91,
+    reviewsCount: 98,
+    matchScore: 91,
+    isAvailable: true,
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000004',
+    fullName: 'Marcus Vance',
+    headline: 'Competitive Programmer & Algorithms Coach',
+    bio: 'Ex-FAANG engineer mentoring students in Dynamic Programming, Graph Theory, Trees, and technical coding interviews.',
+    expertiseTags: ['Algorithms', 'Data Structures', 'Dynamic Programming', 'Python'],
+    rating: 4.88,
+    reviewsCount: 176,
+    matchScore: 84,
+    isAvailable: true,
+  },
+];
 
 export const VoiceQuery: React.FC = () => {
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isMatchingMentors, setIsMatchingMentors] = useState(false);
+  const [matchedMentorsList, setMatchedMentorsList] = useState<Mentor[]>(DEFAULT_MATCHED_MENTORS);
   const [lastAudioMeta, setLastAudioMeta] = useState<{ sizeKb: number; duration: number } | null>(null);
   const [structuredOutput, setStructuredOutput] = useState<{
     transcript?: string;
@@ -22,8 +61,13 @@ export const VoiceQuery: React.FC = () => {
     category?: string;
     tags?: string[];
     urgency?: string;
-    matchedMentors?: string[];
-  } | null>(null);
+  } | null>({
+    transcript: 'I am building a responsive React dashboard with TypeScript and need advice on architecting role-based routing and audio streaming.',
+    summary: 'Student seeking code architecture guidance on React Router role guards, HTML5 MediaRecorder voice capture, and vector matching.',
+    category: 'Frontend',
+    tags: ['react', 'typescript', 'voice-intake', 'web-audio'],
+    urgency: 'Standard',
+  });
 
   // Monitor network status
   React.useEffect(() => {
@@ -39,23 +83,52 @@ export const VoiceQuery: React.FC = () => {
 
   const handleSubmitDoubt = async (blob: Blob, durationSeconds: number) => {
     setIsProcessing(true);
+    setIsMatchingMentors(true);
     setLastAudioMeta({
       sizeKb: Number((blob.size / 1024).toFixed(1)),
       duration: durationSeconds,
     });
 
     try {
+      let transcriptText = 'I am building a responsive React dashboard with TypeScript and need advice on architecting role-based routing and audio streaming.';
+      let categoryVal = 'Frontend';
+
       if (isOnline) {
         try {
           const result = await api.uploadAudio(blob, 'doubt-intake.webm');
+          transcriptText = result.transcript || transcriptText;
           setStructuredOutput({
-            transcript: result.transcript || 'I am preparing my first resume for technical internships and need advice on how to highlight personal open source projects.',
-            summary: 'Student seeking personalized career and project portfolio guidance.',
-            category: 'Frontend Engineering & React',
+            transcript: transcriptText,
+            summary: 'Student seeking personalized guidance on technical architecture and domain best practices.',
+            category: categoryVal,
             tags: ['voice-query', 'mentorship', 'portfolio', 'web-audio'],
-            urgency: 'Priority',
-            matchedMentors: ['Dr. Sarah Jenkins (Web Accessibility & UI)', 'Elena Rostova (Frontend Architect)'],
+            urgency: 'Standard',
           });
+
+          // Call semantic mentor match
+          try {
+            const matchRes = await api.matchMentors({
+              title: transcriptText.slice(0, 80),
+              description: transcriptText,
+              category: categoryVal,
+              match_count: 3,
+            });
+            if (matchRes.matches && matchRes.matches.length > 0) {
+              const mapped: Mentor[] = matchRes.matches.map((m) => ({
+                id: m.mentor_id,
+                fullName: m.full_name,
+                headline: m.headline,
+                bio: m.bio,
+                expertiseTags: m.expertise_tags,
+                rating: m.rating,
+                matchScore: Math.round(m.similarity * 100),
+                isAvailable: true,
+              }));
+              setMatchedMentorsList(mapped);
+            }
+          } catch (matchErr) {
+            console.warn('Live match_mentors RPC offline; displaying local matches:', matchErr);
+          }
           return;
         } catch (apiErr) {
           console.warn('Backend API unreachable, using simulated AI output:', apiErr);
@@ -69,25 +142,24 @@ export const VoiceQuery: React.FC = () => {
         setStructuredOutput({
           transcript: 'I am practicing algorithmic problem solving and getting confused with dynamic programming memoization in grid traversal.',
           summary: 'Your audio is safely saved in local storage. It will be automatically transcribed and matched with algorithms mentors as soon as internet reconnects.',
-          category: 'Computer Science / Algorithms',
+          category: 'Algorithms',
           tags: ['offline-stored', 'dynamic-programming', 'algorithms', 'pwa-sync'],
           urgency: 'Standard',
-          matchedMentors: ['Dr. Sarah Jenkins (Algorithms)', 'Marcus Vance (Data Structures)'],
         });
       } else {
         setStructuredOutput({
           transcript: 'I am building a responsive React dashboard with TypeScript and need advice on architecting role-based routing and audio streaming.',
           summary: 'Student seeking code architecture guidance on React Router role guards and HTML5 MediaRecorder voice capture.',
-          category: 'Frontend Engineering & React',
+          category: 'Frontend',
           tags: ['react', 'typescript', 'voice-intake', 'web-audio'],
-          urgency: 'Priority',
-          matchedMentors: ['Dr. Sarah Jenkins (Web Accessibility & UI)', 'Elena Rostova (Frontend Architect)'],
+          urgency: 'Standard',
         });
       }
     } catch (error) {
       console.error('Error processing audio doubt:', error);
     } finally {
       setIsProcessing(false);
+      setIsMatchingMentors(false);
     }
   };
 
@@ -164,6 +236,13 @@ export const VoiceQuery: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Semantic Mentor Matching Grid */}
+      <MentorMatchGrid
+        mentors={matchedMentorsList}
+        isLoading={isMatchingMentors}
+        doubtTitle={structuredOutput?.transcript?.slice(0, 80) || 'React and Web Audio State Management'}
+      />
     </div>
   );
 };
