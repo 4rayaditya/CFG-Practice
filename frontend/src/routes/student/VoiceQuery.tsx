@@ -1,31 +1,28 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { 
-  Mic, 
-  Square, 
-  Send, 
   Wifi, 
   WifiOff, 
-  Sparkles, 
-  Volume2,
   CheckCircle2,
-  HelpCircle
+  Sparkles,
+  HelpCircle,
+  Clock,
+  Layers,
+  ArrowRight
 } from 'lucide-react';
+import { AudioRecorder } from '../../components/voice/AudioRecorder';
 
 export const VoiceQuery: React.FC = () => {
-  const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [lastAudioMeta, setLastAudioMeta] = useState<{ sizeKb: number; duration: number } | null>(null);
   const [structuredOutput, setStructuredOutput] = useState<{
     transcript?: string;
     summary?: string;
     category?: string;
     tags?: string[];
     urgency?: string;
+    matchedMentors?: string[];
   } | null>(null);
-
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
 
   // Monitor network status
   React.useEffect(() => {
@@ -39,184 +36,75 @@ export const VoiceQuery: React.FC = () => {
     };
   }, []);
 
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-        setAudioBlob(blob);
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-    } catch (err) {
-      console.warn('Microphone permission or mock fallback:', err);
-      // Fallback for simulation if mic not available
-      setIsRecording(true);
-      setTimeout(() => {
-        setIsRecording(false);
-        const dummyBlob = new Blob(['mock audio data'], { type: 'audio/wav' });
-        setAudioBlob(dummyBlob);
-      }, 3000);
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
-    }
-    setIsRecording(false);
-  };
-
-  const handleSubmitDoubt = async () => {
-    if (!audioBlob) return;
+  const handleSubmitDoubt = async (blob: Blob, durationSeconds: number) => {
     setIsProcessing(true);
+    setLastAudioMeta({
+      sizeKb: Number((blob.size / 1024).toFixed(1)),
+      duration: durationSeconds,
+    });
 
     try {
-      // If offline, cue storage simulation
-      if (!isOnline) {
-        setTimeout(() => {
-          setIsProcessing(false);
-          setStructuredOutput({
-            transcript: 'I am practicing algorithmic problem solving and getting confused with dynamic programming memoization.',
-            summary: 'Your audio is safely saved on your device. It will automatically match you with a mentor as soon as your internet reconnects.',
-            category: 'Computer Science / Algorithms',
-            tags: ['offline-saved', 'algorithms', 'student-doubt'],
-            urgency: 'Standard',
-          });
-        }, 1200);
-        return;
-      }
+      // Simulate Whisper transcription & GPT-4o-mini structuring
+      await new Promise((resolve) => setTimeout(resolve, 1400));
 
-      // Online processing via API
-      setTimeout(() => {
-        setIsProcessing(false);
+      if (!isOnline) {
         setStructuredOutput({
-          transcript: 'I am preparing my first resume for technical internships and need advice on how to highlight personal open source projects.',
-          summary: 'Student seeking personalized career and project portfolio guidance.',
-          category: 'Career & Projects',
-          tags: ['career-guidance', 'internships', 'portfolio'],
-          urgency: 'Priority',
+          transcript: 'I am practicing algorithmic problem solving and getting confused with dynamic programming memoization in grid traversal.',
+          summary: 'Your audio is safely saved in local storage. It will be automatically transcribed and matched with algorithms mentors as soon as internet reconnects.',
+          category: 'Computer Science / Algorithms',
+          tags: ['offline-stored', 'dynamic-programming', 'algorithms', 'pwa-sync'],
+          urgency: 'Standard',
+          matchedMentors: ['Dr. Sarah Jenkins (Algorithms)', 'Marcus Vance (Data Structures)'],
         });
-      }, 1500);
+      } else {
+        setStructuredOutput({
+          transcript: 'I am building a responsive React dashboard with TypeScript and need advice on architecting role-based routing and audio streaming.',
+          summary: 'Student seeking code architecture guidance on React Router role guards and HTML5 MediaRecorder voice capture.',
+          category: 'Frontend Engineering & React',
+          tags: ['react', 'typescript', 'voice-intake', 'web-audio'],
+          urgency: 'Priority',
+          matchedMentors: ['Dr. Sarah Jenkins (Web Accessibility & UI)', 'Elena Rostova (Frontend Architect)'],
+        });
+      }
     } catch (error) {
-      console.error(error);
+      console.error('Error processing audio doubt:', error);
+    } finally {
       setIsProcessing(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      {/* Header */}
+    <div className="max-w-4xl mx-auto space-y-8 pb-12">
+      {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 text-xs font-semibold text-sky-700 uppercase tracking-wider mb-1">
-            <span>Student Voice Assistance</span>
+          <div className="inline-flex items-center gap-2 text-xs font-bold text-sky-700 uppercase tracking-wider mb-1">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Student Voice Assistance (CUJ 1)</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-slate-900">Ask Your Question</h1>
+          <h1 className="text-3xl font-extrabold text-slate-900">Voice Doubt Intake</h1>
           <p className="text-sm text-slate-600 mt-1">
-            Speak naturally about whatever you are working on. We will organize your question and match you with a caring mentor.
+            Speak naturally about your technical roadblock or concept question. Whisper AI will transcribe, structure, and route your query to specialized volunteer mentors.
           </p>
         </div>
 
         {/* Network & Offline Status Indicator */}
-        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold ${
+        <div className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl border text-xs font-semibold shadow-xs ${
           isOnline
-            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-            : 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse'
+            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+            : 'bg-amber-50 text-amber-800 border-amber-200 animate-pulse'
         }`}>
           {isOnline ? <Wifi className="w-4 h-4 text-emerald-600" /> : <WifiOff className="w-4 h-4 text-amber-600" />}
-          <span>{isOnline ? 'Online (Ready to Match)' : 'Offline Mode (Saved to Device)'}</span>
+          <span>{isOnline ? 'Online (Instant Match)' : 'Offline (Saved to Device)'}</span>
         </div>
       </div>
 
-      {/* Voice Recording Card */}
-      <div className="light-panel rounded-3xl p-8 border border-slate-200 text-center relative overflow-hidden">
-        <div className="max-w-lg mx-auto space-y-6">
-          <div className="relative">
-            {/* Animated Pulse Ring while recording */}
-            {isRecording && (
-              <div className="absolute inset-0 m-auto w-32 h-32 rounded-full bg-rose-500/10 animate-ping" />
-            )}
-
-            <button
-              onClick={isRecording ? stopRecording : startRecording}
-              className={`relative z-10 w-28 h-28 mx-auto rounded-full flex flex-col items-center justify-center transition-all duration-300 shadow-md ${
-                isRecording
-                  ? 'bg-rose-600 hover:bg-rose-500 text-white scale-105 animate-pulse'
-                  : 'bg-sky-600 hover:bg-sky-500 text-white hover:scale-105'
-              }`}
-            >
-              {isRecording ? (
-                <>
-                  <Square className="w-8 h-8 mb-1 fill-current" />
-                  <span className="text-[11px] font-bold uppercase tracking-wider">Stop</span>
-                </>
-              ) : (
-                <>
-                  <Mic className="w-8 h-8 mb-1" />
-                  <span className="text-[11px] font-bold uppercase tracking-wider">Record</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-bold text-slate-900">
-              {isRecording ? 'Listening to your question...' : audioBlob ? 'Question Recorded!' : 'Tap the Microphone to Speak'}
-            </h3>
-            <p className="text-xs text-slate-600 mt-1 max-w-sm mx-auto">
-              {isRecording
-                ? 'Explain your roadblock, concept question, or homework problem freely.'
-                : 'Works even when offline. Your voice is transcribed and organized for volunteer mentors.'}
-            </p>
-          </div>
-
-          {/* Audio preview & actions */}
-          {audioBlob && (
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-              <div className="flex items-center justify-between text-xs text-slate-600">
-                <div className="flex items-center gap-2">
-                  <Volume2 className="w-4 h-4 text-sky-600" />
-                  <span>Voice Clip Ready</span>
-                </div>
-                <span className="font-mono text-slate-500">{(audioBlob.size / 1024).toFixed(1)} KB</span>
-              </div>
-
-              <div className="flex items-center justify-center gap-3 pt-2">
-                <button
-                  onClick={handleSubmitDoubt}
-                  disabled={isProcessing}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm shadow-xs transition disabled:opacity-50"
-                >
-                  {isProcessing ? (
-                    <>
-                      <Sparkles className="w-4 h-4 animate-spin" />
-                      <span>Matching with Mentors...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      <span>{isOnline ? 'Submit to Mentors' : 'Save for Offline Sync'}</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Voice Recorder Component */}
+      <AudioRecorder
+        onSubmit={handleSubmitDoubt}
+        isSubmitting={isProcessing}
+        submitButtonText={isOnline ? 'Submit to Mentors' : 'Save for Offline Sync'}
+      />
 
       {/* Structured Output & Match Preview */}
       {structuredOutput && (
