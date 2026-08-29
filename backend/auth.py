@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "").strip().strip('"').strip("'")
+SUPABASE_JWT_SECRET = (os.getenv("SUPABASE_JWT_SECRET") or "super-secret-supabase-jwt-key-for-development-32-chars-min").strip().strip('"').strip("'")
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip().rstrip("/").strip('"').strip("'")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "").strip().strip('"').strip("'")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip().strip('"').strip("'")
