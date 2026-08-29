@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import type { UserRole } from '../types';
 import { 
@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 export const Login: React.FC = () => {
-  const { login, setRole, signInWithSupabase, signUpWithSupabase, isSupabaseActive, getDashboardPath } = useAuth();
+  const { user, isAuthenticated, isLoading, login, setRole, signInWithSupabase, signUpWithSupabase, isSupabaseActive, getDashboardPath } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -27,7 +27,8 @@ export const Login: React.FC = () => {
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
 
   // Mode: 'signin' or 'signup'
-  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+  const isRegisterRoute = location.pathname === '/register' || location.search.includes('mode=signup') || location.search.includes('signup=true');
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>(isRegisterRoute ? 'signup' : 'signin');
   const [selectedRole, setSelectedRole] = useState<UserRole>('student');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('alex.chen@student.edu');
@@ -36,6 +37,17 @@ export const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (location.pathname === '/register') {
+      setAuthMode('signup');
+    }
+  }, [location.pathname]);
+
+  // If user is ALREADY authenticated, automatically redirect to their dashboard
+  if (!isLoading && isAuthenticated && user) {
+    return <Navigate to={getDashboardPath(user.role)} replace />;
+  }
 
   const getRoleDestination = (role: UserRole) => {
     if (from && from !== '/login' && from !== '/403' && from !== '/forbidden') return from;

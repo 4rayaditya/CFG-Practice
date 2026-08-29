@@ -10,13 +10,13 @@ export interface ProtectedRouteProps {
 }
 
 /**
- * ProtectedRoute Wrapper Component
+ * ProtectedRoute / RequireRole Wrapper Component
  * - Displays a loading spinner during initial session hydration
  * - Redirects unauthenticated users to /login preserving originating location
- * - Redirects unauthorized roles to the 403 Forbidden page
+ * - If user navigates to an unauthorized URL, immediately redirects them to their own role's home view with an Unauthorized Access state notice
  */
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, getDashboardPath } = useAuth();
   const location = useLocation();
 
   // 1. Session Hydration: Render smooth loading state
@@ -35,17 +35,19 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
   }
 
   // 2. Unauthenticated: Redirect to /login with return location
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // 3. Unauthorized Role: Redirect to 403 Forbidden
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+  // 3. Unauthorized Role: Redirect immediately to their own role's home view with notice
+  if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+    const userHomePath = getDashboardPath(user.role);
     return (
       <Navigate 
-        to="/403" 
+        to={userHomePath} 
         state={{ 
-          allowedRoles, 
+          unauthorizedError: true, 
+          message: `Unauthorized Access: Your account (${user.role}) cannot access ${location.pathname}.`,
           attemptedPath: location.pathname 
         }} 
         replace 
@@ -54,6 +56,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
   }
 
   return <>{children}</>;
+};
+
+export const RequireRole = (roles: UserRole[]) => {
+  return ({ children }: { children: React.ReactNode }) => (
+    <ProtectedRoute allowedRoles={roles}>{children}</ProtectedRoute>
+  );
 };
 
 export const AuthGuard = ProtectedRoute;

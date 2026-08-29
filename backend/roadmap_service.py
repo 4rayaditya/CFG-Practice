@@ -1,7 +1,8 @@
 import os
 import json
 import time
-from typing import List, Optional
+import math
+from typing import List, Optional, Union, Dict, Any
 from pydantic import BaseModel, Field
 from groq import Groq, GroqError
 from dotenv import load_dotenv
@@ -12,8 +13,14 @@ load_dotenv()
 class ResourceItem(BaseModel):
     """Recommended learning or open-source documentation resource."""
     name: str = Field(..., description="Name of the documentation, repository, or tool")
-    url: str = Field(..., description="Link or documentation reference")
+    url: str = Field(default="https://docs.python.org", description="Link or documentation reference")
     type: str = Field(default="docs", description="Type: docs, github, tutorial, or course")
+
+
+class ProjectCheckpoint(BaseModel):
+    """Practical hands-on milestone project to demonstrate mastery."""
+    title: str = Field(default="Milestone Checkpoint Project", description="Title of the milestone project")
+    deliverable: str = Field(default="Working repository deliverable and test suite", description="Expected tangible deliverable")
 
 
 class Milestone(BaseModel):
@@ -21,10 +28,19 @@ class Milestone(BaseModel):
     id: int = Field(..., description="Step index (1, 2, 3...)")
     title: str = Field(..., description="Milestone title, e.g. Phase 1: Modern React Architecture")
     description: str = Field(..., description="Summary of core concepts and goals for this phase")
-    estimated_hours: int = Field(..., description="Estimated hours to complete this phase")
+    week_number: Optional[int] = Field(default=1, description="Sequential week number in timeline")
+    key_topics: List[str] = Field(default_factory=list, description="Target technical concepts and key topics")
+    project_checkpoint: Union[ProjectCheckpoint, str] = Field(
+        default_factory=lambda: ProjectCheckpoint(title="Capstone Checkpoint", deliverable="Functional codebase"),
+        description="Practical hands-on project deliverable"
+    )
+    checkpoint_project: Optional[str] = Field(
+        default="Capstone Checkpoint Deliverable",
+        description="String summary of project checkpoint"
+    )
+    estimated_hours: int = Field(default=25, description="Estimated hours to complete this phase")
     subtasks: List[str] = Field(default_factory=list, description="Actionable checklist items")
     resources: List[ResourceItem] = Field(default_factory=list, description="Curated open-source resources")
-    checkpoint_project: str = Field(..., description="Practical hands-on project to demonstrate mastery")
     key_skills: List[str] = Field(default_factory=list, description="Target competencies acquired")
 
 
@@ -32,7 +48,7 @@ class GenerateRoadmapRequest(BaseModel):
     """Payload for POST /api/generate-roadmap."""
     student_goal: str = Field(
         ...,
-        min_length=3,
+        min_length=2,
         max_length=500,
         description="Career or skill goal (e.g., Full-Stack AI Engineer, Frontend Architect, FAANG Interview Prep)",
         examples=["Full-Stack AI Application Engineer"]
@@ -53,12 +69,14 @@ class GenerateRoadmapRequest(BaseModel):
 
 class StructuredRoadmap(BaseModel):
     """Complete structured Career Track roadmap."""
-    track_title: str
-    summary: str
-    total_estimated_hours: int
-    skill_level: str
-    target_timeline: str
-    milestones: List[Milestone]
+    title: str = Field(..., description="Descriptive Career Pathway Title")
+    track_title: Optional[str] = Field(default=None, description="Alias matching title")
+    summary: str = Field(..., description="Executive curriculum overview")
+    estimated_weeks: int = Field(default=12, description="Calculated duration in weeks")
+    total_estimated_hours: int = Field(default=120, description="Total learning commitment in hours")
+    skill_level: str = Field(default="Beginner", description="Target proficiency baseline")
+    target_timeline: str = Field(default="3 months", description="Student target timeline")
+    milestones: List[Milestone] = Field(default_factory=list, description="Ordered curriculum milestones")
 
 
 class GenerateRoadmapResponse(BaseModel):
@@ -69,188 +87,76 @@ class GenerateRoadmapResponse(BaseModel):
     processing_time_ms: float
 
 
-def generate_fallback_roadmap(goal: str, skill_level: str, timeline: str, focus_areas: Optional[List[str]] = None) -> StructuredRoadmap:
+def parse_timeline_to_weeks(timeline_str: str) -> int:
+    """Parses natural language timelines (e.g. '3 months', '6 weeks', '1 year') to weeks."""
+    s = (timeline_str or "").lower().strip()
+    try:
+        nums = [int(token) for token in s.split() if token.isdigit()]
+        val = nums[0] if nums else 3
+        if "month" in s:
+            return max(1, val * 4)
+        if "week" in s:
+            return max(1, val)
+        if "year" in s:
+            return max(1, val * 52)
+        if "day" in s:
+            return max(1, math.ceil(val / 7))
+    except Exception:
+        pass
+    return 12  # Default to 12 weeks (~3 months)
+
+
+def construct_dynamic_fallback(request: GenerateRoadmapRequest, estimated_weeks: int) -> StructuredRoadmap:
     """
-    Resilient offline domain template generator when Groq API is unconfigured or offline.
+    Constructs a dynamically computed roadmap structure based strictly on the student's
+    specific input goal and parameters without any static canned mock data.
     """
-    goal_lower = goal.lower()
-    focus_tags = focus_areas or []
+    goal = request.student_goal.strip()
+    skill = request.current_skill_level or "Beginner"
+    timeline = request.target_timeline or "3 months"
+    focus = request.focus_areas or ["Core Architecture", "Production Implementation", "Testing & Deployment"]
 
-    if any(k in goal_lower for k in ["ai", "ml", "machine learning", "whisper", "vector", "llm"]):
-        track_title = f"AI & Machine Learning Engineering Track ({timeline})"
-        summary = f"Comprehensive {timeline} journey from Python data foundations to local vector embeddings, Whisper speech models, and production RAG pipelines."
-        milestones = [
-            Milestone(
-                id=1,
-                title="Phase 1: Python Deep Dive & Data Pipeline Fundamentals",
-                description="Master asynchronous Python, NumPy vector operations, and data ingestion architectures.",
-                estimated_hours=30,
-                subtasks=[
-                    "Build asynchronous data scrapers and clean text datasets",
-                    "Vectorize array operations using NumPy and Pandas",
-                    "Implement basic linear algebra and cosine similarity from scratch"
-                ],
-                resources=[
-                    ResourceItem(name="Python Official AsyncIO Docs", url="https://docs.python.org/3/library/asyncio.html", type="docs"),
-                    ResourceItem(name="NumPy Quickstart Guide", url="https://numpy.org/doc/stable/user/quickstart.html", type="docs")
-                ],
-                checkpoint_project="Async data ingestion pipeline processing multimodal dataset chunks.",
-                key_skills=["Python", "NumPy", "AsyncIO", "Data Cleaning"]
-            ),
-            Milestone(
-                id=2,
-                title="Phase 2: Speech-to-Text & Transformer Model Pipelines",
-                description="Integrate Groq Whisper (whisper-large-v3) and local sentence-transformers for real-time speech and semantic embeddings.",
-                estimated_hours=40,
-                subtasks=[
-                    "Implement multipart audio upload streaming in FastAPI",
-                    "Process speech with Whisper API and benchmark transcription latency",
-                    "Generate 384-dimensional dense vector embeddings with all-MiniLM-L6-v2"
-                ],
-                resources=[
-                    ResourceItem(name="Groq Cloud Documentation", url="https://console.groq.com/docs", type="docs"),
-                    ResourceItem(name="Hugging Face Transformers", url="https://huggingface.co/docs/transformers", type="docs")
-                ],
-                checkpoint_project="Real-time voice doubt intake API with Whisper transcription and structured metadata extraction.",
-                key_skills=["Groq API", "Whisper", "Transformers", "Audio Processing"]
-            ),
-            Milestone(
-                id=3,
-                title="Phase 3: Vector Databases & Semantic Mentor Matching",
-                description="Deploy PostgreSQL pgvector with HNSW cosine distance indexes for sub-millisecond semantic similarity search.",
-                estimated_hours=40,
-                subtasks=[
-                    "Write SQL migration scripts for 384-dimensional vector columns",
-                    "Configure HNSW cosine indexes with m=16, ef_construction=64",
-                    "Implement match_mentors RPC function with domain taxonomy filtering"
-                ],
-                resources=[
-                    ResourceItem(name="pgvector GitHub Repository", url="https://github.com/pgvector/pgvector", type="github"),
-                    ResourceItem(name="Supabase Vector Search Guide", url="https://supabase.com/docs/guides/ai", type="docs")
-                ],
-                checkpoint_project="Production-ready semantic mentor matching engine with ranked cosine similarity percentages.",
-                key_skills=["PostgreSQL", "pgvector", "HNSW Indexes", "SQL RPCs", "FastAPI"]
-            )
-        ]
-    elif any(k in goal_lower for k in ["algo", "faang", "interview", "leetcode", "data structure"]):
-        track_title = f"Competitive Programming & FAANG Interview Mastery ({timeline})"
-        summary = f"Structured {timeline} roadmap mastering algorithmic problem solving, graph theory, and dynamic programming."
-        milestones = [
-            Milestone(
-                id=1,
-                title="Phase 1: Core Linear & Non-Linear Data Structures",
-                description="Master time/space complexity analysis, two pointers, sliding window, and binary trees.",
-                estimated_hours=35,
-                subtasks=[
-                    "Implement custom Stack, Queue, Heap, and Trie data structures",
-                    "Solve 30 LeetCode Medium sliding window and two pointer problems",
-                    "Master Tree traversals (BFS, DFS, Lowest Common Ancestor)"
-                ],
-                resources=[
-                    ResourceItem(name="NeetCode Roadmap", url="https://neetcode.io/roadmap", type="tutorial"),
-                    ResourceItem(name="Visualgo Algorithm Visualizer", url="https://visualgo.net", type="docs")
-                ],
-                checkpoint_project="Build an interactive visualizer for tree and graph traversal algorithms.",
-                key_skills=["Data Structures", "Trees", "Sliding Window", "Big-O Analysis"]
-            ),
-            Milestone(
-                id=2,
-                title="Phase 2: Dynamic Programming & State Transitions",
-                description="Conquer 1D and 2D dynamic programming, memoization, and optimal substructure formulation.",
-                estimated_hours=45,
-                subtasks=[
-                    "Transition from recursive top-down to bottom-up tabular DP",
-                    "Solve Grid Traversal, Knapsack, and Longest Common Subsequence problems",
-                    "Practice bitmask and state compression techniques"
-                ],
-                resources=[
-                    ResourceItem(name="Dynamic Programming by Erik Demaine (MIT)", url="https://ocw.mit.edu", type="course")
-                ],
-                checkpoint_project="Solve and document comprehensive solutions for 25 top DP interview challenges.",
-                key_skills=["Dynamic Programming", "Memoization", "Recurrence Relations"]
-            ),
-            Milestone(
-                id=3,
-                title="Phase 3: Graph Algorithms & Mock Technical Interviews",
-                description="Master Dijkstra, Bellman-Ford, Topological Sort, Disjoint Set Union, and mock interview drills.",
-                estimated_hours=35,
-                subtasks=[
-                    "Implement shortest path and minimum spanning tree algorithms",
-                    "Participate in timed weekly contest simulations",
-                    "Practice communicating time/space complexity tradeoffs out loud"
-                ],
-                resources=[
-                    ResourceItem(name="USACO Guide", url="https://usaco.guide", type="tutorial")
-                ],
-                checkpoint_project="Pass 3 live mock technical interviews under 45-minute time constraints.",
-                key_skills=["Graph Theory", "Dijkstra", "Topological Sort", "Interview Communication"]
-            )
-        ]
-    else:
-        # Default: Full-Stack Web & AI Engineering Track
-        track_title = f"Full-Stack Modern Web & AI Development ({timeline})"
-        summary = f"Comprehensive {timeline} pathway from modern React 19 architecture to FastAPI, Supabase JWT auth, and AI integrations."
-        milestones = [
-            Milestone(
-                id=1,
-                title="Phase 1: React 19, TypeScript & Audio UI Components",
-                description="Master typed React architecture, Tailwind CSS design systems, and HTML5 Web Audio API.",
-                estimated_hours=35,
-                subtasks=[
-                    "Create accessible glassmorphic UI cards with micro-animations",
-                    "Implement MediaRecorder audio stream capture and canvas waveform spectrum",
-                    "Enforce role-based layout redirects and 403 authorization boundaries"
-                ],
-                resources=[
-                    ResourceItem(name="React Official Documentation", url="https://react.dev", type="docs"),
-                    ResourceItem(name="Tailwind CSS Documentation", url="https://tailwindcss.com/docs", type="docs")
-                ],
-                checkpoint_project="Voice Intake Audio Recorder component with live animated spectrum canvas.",
-                key_skills=["React 19", "TypeScript", "Tailwind CSS", "Web Audio API"]
-            ),
-            Milestone(
-                id=2,
-                title="Phase 2: FastAPI Backend & Local JWT Verification",
-                description="Build asynchronous REST API services with local HS256 JWT signature verification and role guards.",
-                estimated_hours=35,
-                subtasks=[
-                    "Set up FastAPI application with CORS and Pydantic validation",
-                    "Implement zero-roundtrip Supabase JWT authentication middleware",
-                    "Integrate Groq Whisper API for speech-to-text transcription"
-                ],
-                resources=[
-                    ResourceItem(name="FastAPI Tutorial", url="https://fastapi.tiangolo.com/tutorial/", type="docs"),
-                    ResourceItem(name="PyJWT Documentation", url="https://pyjwt.readthedocs.io", type="docs")
-                ],
-                checkpoint_project="Secure FastAPI backend service with role guards and audio transcription endpoint.",
-                key_skills=["FastAPI", "JWT Auth", "Pydantic", "Python"]
-            ),
-            Milestone(
-                id=3,
-                title="Phase 3: Vector Embeddings, Mentor Matching & PWA Offline Sync",
-                description="Connect pgvector similarity search, Groq Llama 3 classification, and service worker background sync.",
-                estimated_hours=40,
-                subtasks=[
-                    "Implement 384-dimensional query embedding generation",
-                    "Create Supabase match_mentors RPC function for Cosine similarity",
-                    "Configure PWA manifest and offline IndexedDB voice query caching"
-                ],
-                resources=[
-                    ResourceItem(name="Supabase pgvector Docs", url="https://supabase.com/docs/guides/ai", type="docs"),
-                    ResourceItem(name="Vite PWA Plugin Guide", url="https://vite-pwa-org.netlify.app", type="docs")
-                ],
-                checkpoint_project="Full-Stack MentorMatch AI platform with offline audio sync and live mentor matching.",
-                key_skills=["pgvector", "LLMs", "PWA", "IndexedDB", "Supabase"]
-            )
-        ]
+    num_milestones = min(max(3, math.ceil(estimated_weeks / 2)), 6)
+    weeks_per_phase = max(1, estimated_weeks // num_milestones)
 
-    total_hours = sum(m.estimated_hours for m in milestones)
+    milestones = []
+    for i in range(1, num_milestones + 1):
+        focus_topic = focus[(i - 1) % len(focus)] if focus else f"Core Area {i}"
+        week_start = (i - 1) * weeks_per_phase + 1
+        week_end = min(estimated_weeks, i * weeks_per_phase)
+        
+        milestones.append(Milestone(
+            id=i,
+            title=f"Phase {i}: Mastering {focus_topic} for {goal}",
+            description=f"In-depth mastery of {focus_topic} tailored for {skill} level, covering core paradigms and real-world system design.",
+            week_number=i,
+            key_topics=[focus_topic, f"{goal} Patterns", "Clean Code & Testing", "Performance Optimization"],
+            project_checkpoint=ProjectCheckpoint(
+                title=f"{focus_topic} Capstone Implementation",
+                deliverable=f"Production-grade {focus_topic} module with automated tests and architecture documentation"
+            ),
+            estimated_hours=weeks_per_phase * 10,
+            subtasks=[
+                f"Study foundational principles and documentation for {focus_topic}",
+                f"Implement hands-on laboratory exercises and architectural patterns",
+                f"Write unit and integration tests verifying system behavior",
+                f"Complete {focus_topic} checkpoint review and code audit"
+            ],
+            resources=[
+                ResourceItem(name=f"{focus_topic} Official Guide", url="https://docs.python.org", type="docs"),
+                ResourceItem(name=f"{goal} Reference Repository", url="https://github.com", type="github")
+            ],
+            key_skills=[focus_topic, "System Design", "Problem Solving", "Architecture"]
+        ))
 
+    title_str = f"{goal} Mastery Pathway ({timeline})"
     return StructuredRoadmap(
-        track_title=track_title,
-        summary=summary,
-        total_estimated_hours=total_hours,
-        skill_level=skill_level,
+        title=title_str,
+        track_title=title_str,
+        summary=f"A personalized, dynamic {timeline} pathway for a {skill} learner striving to master {goal}.",
+        estimated_weeks=estimated_weeks,
+        total_estimated_hours=sum(m.estimated_hours for m in milestones),
+        skill_level=skill,
         target_timeline=timeline,
         milestones=milestones
     )
@@ -258,50 +164,55 @@ def generate_fallback_roadmap(goal: str, skill_level: str, timeline: str, focus_
 
 def generate_career_roadmap(request: GenerateRoadmapRequest) -> StructuredRoadmap:
     """
-    Main roadmap generation function:
-    Invokes Groq Llama 3 (llama-3.3-70b-versatile) with strict JSON mode,
-    falling back to curated domain templates if API key is not configured.
+    Generates a personalized Career Track roadmap using Groq LLaMA (llama-3.3-70b-versatile)
+    with strict JSON mode, dynamically translating student_goal, skill_level, and timeline.
     """
-    groq_key = os.getenv("GROQ_API_KEY", "").strip()
+    groq_api_key = os.getenv("GROQ_API_KEY", "").strip()
+    estimated_weeks = parse_timeline_to_weeks(request.target_timeline or "3 months")
 
-    if groq_key and not groq_key.startswith("gsk_your"):
+    if groq_api_key and not groq_api_key.startswith("gsk_your"):
         try:
-            client = Groq(api_key=groq_key)
-            
+            client = Groq(api_key=groq_api_key)
+
             system_prompt = (
-                "You are an expert technical career coach and curriculum architect for MentorMatch AI. "
-                "Your task is to generate a comprehensive, actionable Career Track roadmap tailored to the student's goal, "
-                "skill level, and timeline.\n\n"
-                "You MUST return ONLY a valid JSON object matching this schema exactly:\n"
+                "You are a world-class Principal Technical Mentor and Curriculum Architect at MentorMatch AI.\n"
+                "Your job is to generate a comprehensive, highly technical, and actionable Career Track roadmap "
+                "tailored precisely to the student's goal, starting skill level, and target timeline.\n\n"
+                "You MUST return a valid JSON object matching this exact schema:\n"
                 "{\n"
-                '  "track_title": "Descriptive Career Track Title",\n'
-                '  "summary": "1-2 sentence overview of the journey and outcomes",\n'
-                '  "total_estimated_hours": 120,\n'
-                '  "skill_level": "Beginner | Intermediate | Advanced",\n'
-                '  "target_timeline": "3 months",\n'
+                '  "title": "Concise Pathway Title (string)",\n'
+                '  "summary": "Executive overview of the learning journey (string)",\n'
+                '  "estimated_weeks": 12 (integer),\n'
+                '  "total_estimated_hours": 120 (integer),\n'
                 '  "milestones": [\n'
                 "    {\n"
-                '      "id": 1,\n'
-                '      "title": "Phase 1: Phase Title",\n'
-                '      "description": "Clear explanation of core concepts",\n'
-                '      "estimated_hours": 35,\n'
+                '      "id": 1 (integer),\n'
+                '      "title": "Phase title (string)",\n'
+                '      "description": "Comprehensive explanation of goals and key concepts (string)",\n'
+                '      "week_number": 1 (integer),\n'
+                '      "key_topics": ["Topic 1", "Topic 2", "Topic 3"],\n'
+                '      "project_checkpoint": {\n'
+                '        "title": "Project checkpoint name (string)",\n'
+                '        "deliverable": "Tangible repository and architecture deliverable (string)"\n'
+                "      },\n"
+                '      "estimated_hours": 30 (integer),\n'
                 '      "subtasks": ["Actionable subtask 1", "Actionable subtask 2", "Actionable subtask 3"],\n'
                 '      "resources": [\n'
-                '        {"name": "Official Resource Name", "url": "https://example.com/docs", "type": "docs"}\n'
+                '        {"name": "Resource Name", "url": "https://documentation.url", "type": "docs"}\n'
                 "      ],\n"
-                '      "checkpoint_project": "Hands-on project to validate mastery",\n'
-                '      "key_skills": ["Skill1", "Skill2", "Skill3"]\n'
+                '      "key_skills": ["Skill 1", "Skill 2"]\n'
                 "    }\n"
                 "  ]\n"
                 "}\n"
-                "Create between 3 and 5 progressive milestones with concrete projects and open-source resources."
+                "Do NOT wrap in markdown backticks or include any text outside the raw JSON object."
             )
 
             user_prompt = (
                 f"Student Goal: {request.student_goal}\n"
                 f"Current Skill Level: {request.current_skill_level or 'Beginner'}\n"
-                f"Target Timeline: {request.target_timeline or '3 months'}\n"
-                f"Focus Areas: {', '.join(request.focus_areas) if request.focus_areas else 'Core modern standards'}\n"
+                f"Target Timeline: {request.target_timeline or '3 months'} (~{estimated_weeks} weeks)\n"
+                f"Focus Areas: {', '.join(request.focus_areas) if request.focus_areas else 'Industry standard best practices'}\n"
+                "Please generate a complete, rigorous, sequential roadmap with 3 to 6 practical milestone phases."
             )
 
             response = client.chat.completions.create(
@@ -312,58 +223,91 @@ def generate_career_roadmap(request: GenerateRoadmapRequest) -> StructuredRoadma
                 ],
                 response_format={"type": "json_object"},
                 temperature=0.2,
-                max_tokens=2000,
+                max_tokens=3000,
             )
 
             content = response.choices[0].message.content
             parsed = json.loads(content)
 
-            # Validate milestones through Pydantic
-            milestone_objs = []
+            # Extract milestones safely
+            milestone_objs: List[Milestone] = []
             for idx, raw_m in enumerate(parsed.get("milestones", []), start=1):
+                if not isinstance(raw_m, dict):
+                    continue
+
+                raw_checkpoint = raw_m.get("project_checkpoint")
+                if isinstance(raw_checkpoint, dict):
+                    checkpoint = ProjectCheckpoint(
+                        title=str(raw_checkpoint.get("title", f"Milestone {idx} Checkpoint Project")),
+                        deliverable=str(raw_checkpoint.get("deliverable", "Working codebase with documentation"))
+                    )
+                elif isinstance(raw_checkpoint, str):
+                    checkpoint = ProjectCheckpoint(
+                        title=f"Milestone {idx} Project",
+                        deliverable=raw_checkpoint
+                    )
+                else:
+                    checkpoint = ProjectCheckpoint(
+                        title=f"Milestone {idx} Checkpoint Project",
+                        deliverable="Production-grade implementation deliverable"
+                    )
+
                 resources = [
                     ResourceItem(
-                        name=r.get("name", "Resource Docs"),
+                        name=r.get("name", "Documentation Resource"),
                         url=r.get("url", "https://docs.python.org"),
                         type=r.get("type", "docs")
                     )
                     for r in raw_m.get("resources", [])
                     if isinstance(r, dict)
                 ]
+
+                key_topics = [str(k) for k in raw_m.get("key_topics", [])]
+                key_skills = [str(s) for s in raw_m.get("key_skills", [])] or key_topics
+
+                checkpoint_desc = (
+                    f"{checkpoint.title}: {checkpoint.deliverable}" 
+                    if isinstance(checkpoint, ProjectCheckpoint) 
+                    else str(checkpoint)
+                )
+
                 milestone_objs.append(Milestone(
-                    id=raw_m.get("id", idx),
+                    id=int(raw_m.get("id", idx)),
                     title=str(raw_m.get("title", f"Phase {idx}")),
                     description=str(raw_m.get("description", "")),
-                    estimated_hours=int(raw_m.get("estimated_hours", 30)),
+                    week_number=int(raw_m.get("week_number", idx)),
+                    key_topics=key_topics,
+                    project_checkpoint=checkpoint,
+                    checkpoint_project=checkpoint_desc,
+                    estimated_hours=int(raw_m.get("estimated_hours", 25)),
                     subtasks=[str(t) for t in raw_m.get("subtasks", [])],
                     resources=resources,
-                    checkpoint_project=str(raw_m.get("checkpoint_project", "Project checkpoint")),
-                    key_skills=[str(k) for k in raw_m.get("key_skills", [])]
+                    key_skills=key_skills
                 ))
 
-            total_hours = parsed.get("total_estimated_hours") or sum(m.estimated_hours for m in milestone_objs)
+            # If model returned no milestones, fall back to dynamic generation
+            if not milestone_objs:
+                return construct_dynamic_fallback(request, estimated_weeks)
+
+            title_val = str(parsed.get("title") or parsed.get("track_title") or f"{request.student_goal} Career Pathway")
+            summary_val = str(parsed.get("summary") or f"Curated curriculum for mastering {request.student_goal}.")
+            total_hours = int(parsed.get("total_estimated_hours") or sum(m.estimated_hours for m in milestone_objs))
+            weeks_val = int(parsed.get("estimated_weeks") or estimated_weeks)
 
             return StructuredRoadmap(
-                track_title=str(parsed.get("track_title", f"{request.student_goal} Track")),
-                summary=str(parsed.get("summary", "Personalized career roadmap.")),
-                total_estimated_hours=int(total_hours),
+                title=title_val,
+                track_title=title_val,
+                summary=summary_val,
+                estimated_weeks=weeks_val,
+                total_estimated_hours=total_hours,
                 skill_level=str(request.current_skill_level or "Beginner"),
                 target_timeline=str(request.target_timeline or "3 months"),
                 milestones=milestone_objs
             )
 
-        except Exception as exc:
-            print(f"[WARN] Groq LLM roadmap generation fallback engaged: {exc}")
-            return generate_fallback_roadmap(
-                request.student_goal,
-                request.current_skill_level or "Beginner",
-                request.target_timeline or "3 months",
-                request.focus_areas
-            )
-    else:
-        return generate_fallback_roadmap(
-            request.student_goal,
-            request.current_skill_level or "Beginner",
-            request.target_timeline or "3 months",
-            request.focus_areas
-        )
+        except (GroqError, json.JSONDecodeError, Exception) as exc:
+            print(f"[WARN] Groq LLM roadmap generation encountered error: {exc}. Generating dynamic computed roadmap.")
+            return construct_dynamic_fallback(request, estimated_weeks)
+
+    # Dynamic generation based on student inputs
+    return construct_dynamic_fallback(request, estimated_weeks)

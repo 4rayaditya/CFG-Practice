@@ -18,6 +18,7 @@ export const AppRoutes: React.FC = () => {
         {/* Public Routes */}
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Login />} />
         <Route path="/roadmap" element={<CareerRoadmap />} />
         <Route path="/403" element={<Forbidden />} />
         <Route path="/forbidden" element={<Forbidden />} />
@@ -25,11 +26,11 @@ export const AppRoutes: React.FC = () => {
         {/* Central Dynamic Role Resolver */}
         <Route path="/dashboard" element={<DashboardRedirect />} />
 
-        {/* Student Protected Routes (CUJ 1) */}
+        {/* Student Protected Routes (CUJ 1 & CUJ 2) */}
         <Route
           path="/student/voice-query"
           element={
-            <ProtectedRoute allowedRoles={['student', 'admin']}>
+            <ProtectedRoute allowedRoles={['student']}>
               <VoiceQuery />
             </ProtectedRoute>
           }
@@ -40,14 +41,14 @@ export const AppRoutes: React.FC = () => {
         <Route
           path="/mentor/doubt-board"
           element={
-            <ProtectedRoute allowedRoles={['mentor', 'admin']}>
+            <ProtectedRoute allowedRoles={['mentor']}>
               <DoubtBoard />
             </ProtectedRoute>
           }
         />
         <Route path="/mentor" element={<Navigate to="/mentor/doubt-board" replace />} />
 
-        {/* Admin Protected Routes */}
+        {/* Admin Protected Routes (Telemetry & Analytics) */}
         <Route
           path="/admin/analytics"
           element={
@@ -64,3 +65,5 @@ export const AppRoutes: React.FC = () => {
     </Routes>
   );
 };
+
+export default AppRoutes;

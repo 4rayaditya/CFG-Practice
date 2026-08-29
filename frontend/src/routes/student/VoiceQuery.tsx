@@ -17,6 +17,9 @@ import { useNetworkStatus } from '../../hooks/useNetworkStatus';
 import { saveFailedAudioUpload, QueuedAudioUpload } from '../../utils/offlineQueue';
 import { api } from '../../services/api';
 
+import { useAuth } from '../../hooks/useAuth';
+import { supabase } from '../../lib/supabase';
+
 const DEFAULT_MATCHED_MENTORS: Mentor[] = [
   {
     id: '00000000-0000-0000-0000-000000000002',
@@ -54,25 +57,57 @@ const DEFAULT_MATCHED_MENTORS: Mentor[] = [
 ];
 
 export const VoiceQuery: React.FC = () => {
+  const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isMatchingMentors, setIsMatchingMentors] = useState(false);
   const [syncToastMessage, setSyncToastMessage] = useState<string | null>(null);
 
   // Auto-sync callback when items finish flushing from IndexedDB
-  const handleAutoSyncSuccess = useCallback((item: QueuedAudioUpload, result: any) => {
+  const handleAutoSyncSuccess = useCallback(async (item: QueuedAudioUpload, result: any) => {
     console.log('[VoiceQuery] Auto-sync received transcript:', result);
     if (result && result.transcript) {
+      const doubtTitle = result.structured_doubt?.title || result.transcript.slice(0, 80);
+      const doubtCategory = result.structured_doubt?.category || 'General';
+      const doubtTags = result.structured_doubt?.tags || ['auto-synced', 'offline-pwa'];
+      const doubtUrgency = result.structured_doubt?.urgency || 'Standard';
+
       setStructuredOutput({
         transcript: result.transcript,
-        summary: `Synced from offline queue: ${result.transcript.slice(0, 100)}...`,
-        category: result.structured_doubt?.category || 'General',
-        tags: result.structured_doubt?.tags || ['auto-synced', 'offline-pwa'],
-        urgency: result.structured_doubt?.urgency || 'Standard',
+        summary: result.structured_doubt?.description || `Synced from offline queue: ${result.transcript.slice(0, 100)}...`,
+        category: doubtCategory,
+        tags: doubtTags,
+        urgency: doubtUrgency,
       });
-      setSyncToastMessage(`🎉 Offline recording synced with Whisper AI!`);
+
+      // Persist auto-synced doubt to Supabase
+      if (user) {
+        try {
+          const { error: rlsError } = await supabase
+            .from('doubts')
+            .insert([{
+              student_id: user.id,
+              title: doubtTitle,
+              description: result.transcript,
+              transcript: result.transcript,
+              category: doubtCategory,
+              tags: doubtTags,
+              status: 'pending',
+              urgency: doubtUrgency,
+            }]);
+          if (rlsError) {
+            console.error('[VoiceQuery] RLS error inserting auto-synced doubt:', rlsError);
+          } else {
+            console.log('[VoiceQuery] Auto-synced doubt persisted to Supabase.');
+          }
+        } catch (dbErr) {
+          console.warn('[VoiceQuery] Database insertion error during auto-sync:', dbErr);
+        }
+      }
+
+      setSyncToastMessage(`🎉 Offline recording synced with Whisper AI & saved to database!`);
       setTimeout(() => setSyncToastMessage(null), 5000);
     }
-  }, []);
+  }, [user]);
 
   // Global Network Status & Background Sync hook
   const { 
@@ -173,21 +208,56 @@ export const VoiceQuery: React.FC = () => {
       try {
         const result = await api.uploadAudio(blob, 'doubt-intake.webm');
         transcriptText = result.transcript || transcriptText;
+        const doubtTitle = result.structured_doubt?.title || transcriptText.slice(0, 80);
+        const doubtCategory = result.structured_doubt?.category || categoryVal;
+        const doubtTags = result.structured_doubt?.tags || ['voice-query', 'mentorship', 'portfolio', 'web-audio'];
+        const doubtUrgency = result.structured_doubt?.urgency || 'Standard';
+
         const newStructured = {
           transcript: transcriptText,
           summary: result.structured_doubt?.description || 'Student seeking personalized guidance on technical architecture and domain best practices.',
-          category: result.structured_doubt?.category || categoryVal,
-          tags: result.structured_doubt?.tags || ['voice-query', 'mentorship', 'portfolio', 'web-audio'],
-          urgency: result.structured_doubt?.urgency || 'Standard',
+          category: doubtCategory,
+          tags: doubtTags,
+          urgency: doubtUrgency,
         };
         setStructuredOutput(newStructured);
+
+        // TASK 2: Persist processed doubt directly to Supabase doubts table
+        if (user) {
+          try {
+            const { data: insertedDoubt, error: rlsError } = await supabase
+              .from('doubts')
+              .insert([{
+                student_id: user.id,
+                title: doubtTitle,
+                description: transcriptText,
+                transcript: transcriptText,
+                category: doubtCategory,
+                tags: doubtTags,
+                status: 'pending',
+                urgency: doubtUrgency,
+              }])
+              .select()
+              .single();
+
+            if (rlsError) {
+              console.error('[VoiceQuery] Supabase RLS / Insert Error on doubts:', rlsError);
+            } else {
+              console.log('[VoiceQuery] Successfully persisted doubt to Supabase:', insertedDoubt);
+              setSyncToastMessage('✨ Question submitted & broadcasted to live mentor queue in real-time!');
+              setTimeout(() => setSyncToastMessage(null), 5000);
+            }
+          } catch (dbErr) {
+            console.error('[VoiceQuery] Database insertion exception:', dbErr);
+          }
+        }
 
         // Call semantic mentor match
         try {
           const matchRes = await api.matchMentors({
-            title: transcriptText.slice(0, 80),
+            title: doubtTitle,
             description: transcriptText,
-            category: newStructured.category,
+            category: doubtCategory,
             match_count: 3,
           });
           if (matchRes.matches && matchRes.matches.length > 0) {
