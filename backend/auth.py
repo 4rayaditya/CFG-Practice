@@ -1,6 +1,7 @@
 import os
 from typing import Optional, List, Dict, Any
 import jwt
+import httpx
 from fastapi import HTTPException, Security, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
@@ -9,7 +10,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Supabase JWT Secret configured in Supabase Project Settings -> API -> JWT Settings (Min 32 bytes recommended)
-SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "super-secret-supabase-jwt-key-for-development-32-chars-min")
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "super-secret-supabase-jwt-key-for-development-32-chars-min").strip().strip('"').strip("'")
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip().rstrip("/").strip('"').strip("'")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "").strip().strip('"').strip("'")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip().strip('"').strip("'")
 
 # HTTPBearer scheme to extract Authorization: Bearer <token>
 security = HTTPBearer(auto_error=False)
@@ -27,15 +31,16 @@ class AuthenticatedUser(BaseModel):
 
 def verify_supabase_jwt(token: str) -> AuthenticatedUser:
     """
-    Verifies a Supabase JWT locally using the project's JWT Secret (HS256).
+    Verifies a Supabase JWT locally using the project's JWT Secret (HS256/RS256).
     Performs zero network round-trips to Supabase for high throughput and sub-millisecond latency.
+    Falls back to Supabase Auth API verification if configured and local verification encounters a key/algorithm mismatch.
     """
     try:
-        # Decode and verify signature, expiration, and audience
+        # Decode and verify signature, expiration, and audience (accepting HS256, RS256, ES256)
         payload = jwt.decode(
             token,
             SUPABASE_JWT_SECRET,
-            algorithms=["HS256"],
+            algorithms=["HS256", "RS256", "ES256"],
             options={
                 "verify_signature": True,
                 "verify_exp": True,
@@ -78,6 +83,34 @@ def verify_supabase_jwt(token: str) -> AuthenticatedUser:
             headers={"WWW-Authenticate": "Bearer"},
         )
     except jwt.InvalidTokenError as exc:
+        # Fallback: If Supabase project is configured, verify token via Supabase Auth API
+        api_key = SUPABASE_ANON_KEY or SUPABASE_SERVICE_ROLE_KEY
+        if SUPABASE_URL and not SUPABASE_URL.startswith("https://your-") and api_key:
+            try:
+                with httpx.Client(timeout=4.0) as client:
+                    resp = client.get(
+                        f"{SUPABASE_URL}/auth/v1/user",
+                        headers={
+                            "apikey": api_key,
+                            "Authorization": f"Bearer {token}",
+                        }
+                    )
+                    if resp.status_code == 200:
+                        user_data = resp.json()
+                        app_meta = user_data.get("app_metadata", {})
+                        user_meta = user_data.get("user_metadata", {})
+                        user_role = app_meta.get("role") or user_meta.get("role") or "student"
+                        return AuthenticatedUser(
+                            id=str(user_data.get("id")),
+                            email=user_data.get("email"),
+                            role=str(user_role),
+                            aud=user_data.get("aud"),
+                            app_metadata=app_meta,
+                            user_metadata=user_meta,
+                        )
+            except Exception as net_err:
+                print(f"[WARN] Supabase online token verification fallback error: {net_err}")
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid authentication token: {str(exc)}",
