@@ -15,6 +15,13 @@ from classifier import (
     ClassifyDoubtResponse,
     classify_transcript
 )
+from embedding_service import (
+    MatchMentorRequest,
+    MentorMatchResult,
+    MatchMentorResponse,
+    match_mentors_service,
+    compute_query_embedding
+)
 
 load_dotenv()
 
@@ -227,6 +234,48 @@ def classify_doubt_endpoint(
         success=True,
         raw_transcript=payload.transcript,
         structured_doubt=structured_doubt,
+        processing_time_ms=processing_time_ms,
+    )
+
+
+# -----------------------------------------------------------------------------
+# Person 2: Semantic Mentor Matching (CUJ 1 & CUJ 2 - 384-dim Vector Search)
+# -----------------------------------------------------------------------------
+
+@app.post("/api/match-mentor", response_model=MatchMentorResponse)
+async def match_mentor_endpoint(
+    payload: MatchMentorRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Accepts doubt title and description, computes a normalized 384-dimensional
+    all-MiniLM-L6-v2 semantic embedding, calls the Supabase match_mentors RPC function,
+    and returns top ranked mentor recommendations with match percentages.
+    """
+    start_time = time.perf_counter()
+
+    if not payload.title or not payload.title.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Doubt title is required for mentor matching.",
+        )
+
+    matches = await match_mentors_service(
+        title=payload.title,
+        description=payload.description or "",
+        category=payload.category,
+        match_count=payload.match_count or 3,
+        match_threshold=payload.match_threshold or 0.35,
+    )
+
+    processing_time_ms = round((time.perf_counter() - start_time) * 1000, 2)
+
+    return MatchMentorResponse(
+        success=True,
+        query_title=payload.title,
+        query_category=payload.category,
+        embedding_dimensions=384,
+        matches=matches,
         processing_time_ms=processing_time_ms,
     )
 
