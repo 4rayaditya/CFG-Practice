@@ -73,6 +73,7 @@ ALTER TABLE public.roadmaps ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.milestones ENABLE ROW LEVEL SECURITY;
 
 -- 5.1 Roadmaps Policies
+DROP POLICY IF EXISTS "Students can view their own roadmaps" ON public.roadmaps;
 CREATE POLICY "Students can view their own roadmaps"
     ON public.roadmaps FOR SELECT
     TO authenticated
@@ -84,23 +85,27 @@ CREATE POLICY "Students can view their own roadmaps"
         )
     );
 
+DROP POLICY IF EXISTS "Students can create their own roadmaps" ON public.roadmaps;
 CREATE POLICY "Students can create their own roadmaps"
     ON public.roadmaps FOR INSERT
     TO authenticated
     WITH CHECK (auth.uid() = student_id);
 
+DROP POLICY IF EXISTS "Students can update their own roadmaps" ON public.roadmaps;
 CREATE POLICY "Students can update their own roadmaps"
     ON public.roadmaps FOR UPDATE
     TO authenticated
     USING (auth.uid() = student_id)
     WITH CHECK (auth.uid() = student_id);
 
+DROP POLICY IF EXISTS "Students can delete their own roadmaps" ON public.roadmaps;
 CREATE POLICY "Students can delete their own roadmaps"
     ON public.roadmaps FOR DELETE
     TO authenticated
     USING (auth.uid() = student_id);
 
 -- 5.2 Milestones Policies
+DROP POLICY IF EXISTS "Students can view milestones of their roadmaps" ON public.milestones;
 CREATE POLICY "Students can view milestones of their roadmaps"
     ON public.milestones FOR SELECT
     TO authenticated
@@ -118,6 +123,7 @@ CREATE POLICY "Students can view milestones of their roadmaps"
         )
     );
 
+DROP POLICY IF EXISTS "Students can insert milestones into their roadmaps" ON public.milestones;
 CREATE POLICY "Students can insert milestones into their roadmaps"
     ON public.milestones FOR INSERT
     TO authenticated
@@ -129,6 +135,7 @@ CREATE POLICY "Students can insert milestones into their roadmaps"
         )
     );
 
+DROP POLICY IF EXISTS "Students can update milestones in their roadmaps" ON public.milestones;
 CREATE POLICY "Students can update milestones in their roadmaps"
     ON public.milestones FOR UPDATE
     TO authenticated
@@ -140,6 +147,7 @@ CREATE POLICY "Students can update milestones in their roadmaps"
         )
     );
 
+DROP POLICY IF EXISTS "Students can delete milestones from their roadmaps" ON public.milestones;
 CREATE POLICY "Students can delete milestones from their roadmaps"
     ON public.milestones FOR DELETE
     TO authenticated
