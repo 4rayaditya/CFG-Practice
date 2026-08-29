@@ -27,6 +27,13 @@ export const api = {
   async uploadAudio(audioBlob: Blob, filename = 'recording.webm'): Promise<{
     success: boolean;
     transcript: string;
+    structured_doubt?: {
+      title?: string;
+      description?: string;
+      category?: string;
+      tags?: string[];
+      urgency?: string;
+    };
     file_name: string;
     file_size_bytes: number;
     audio_format: string;
