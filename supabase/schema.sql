@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS public.mentors (
     headline TEXT,
     bio TEXT,
     expertise_tags TEXT[] DEFAULT '{}',
-    skill_embedding VECTOR(1536), -- OpenAI text-embedding-3-small / Ada-002
+    skill_embedding VECTOR(384), -- Local 384-dim embeddings (e.g. all-MiniLM-L6-v2 / BAAI/bge-small-en-v1.5)
     is_available BOOLEAN NOT NULL DEFAULT TRUE,
     rating NUMERIC(3, 2) DEFAULT 5.00 CHECK (rating >= 0.00 AND rating <= 5.00),
     resolved_count INTEGER NOT NULL DEFAULT 0 CHECK (resolved_count >= 0),
@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS public.doubts (
     tags TEXT[] DEFAULT '{}',
     status doubt_status NOT NULL DEFAULT 'pending',
     urgency TEXT DEFAULT 'Standard',
-    embedding VECTOR(1536), -- Vector representation of question for matching
+    embedding VECTOR(384), -- 384-dim vector representation of question for matching
     matched_mentor_ids UUID[] DEFAULT '{}',
     assigned_mentor_id UUID REFERENCES public.mentors(id) ON DELETE SET NULL,
     answer TEXT,
@@ -188,14 +188,16 @@ CREATE TRIGGER on_auth_user_created
 -- 6. PGVECTOR COSINE SIMILARITY MATCHING RPC FUNCTION
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.match_mentors(
-    query_embedding VECTOR(1536),
-    match_threshold FLOAT DEFAULT 0.70,
-    match_count INT DEFAULT 3
+    query_embedding VECTOR(384),
+    match_threshold FLOAT DEFAULT 0.50,
+    match_count INT DEFAULT 5,
+    filter_category TEXT DEFAULT NULL
 )
 RETURNS TABLE (
     mentor_id UUID,
     full_name TEXT,
     headline TEXT,
+    bio TEXT,
     expertise_tags TEXT[],
     rating NUMERIC,
     similarity FLOAT
@@ -206,18 +208,24 @@ BEGIN
         m.id AS mentor_id,
         p.full_name,
         m.headline,
+        m.bio,
         m.expertise_tags,
         m.rating,
-        1 - (m.skill_embedding <=> query_embedding) AS similarity
+        (1 - (m.skill_embedding <=> query_embedding))::FLOAT AS similarity
     FROM public.mentors m
     JOIN public.profiles p ON p.id = m.id
     WHERE m.is_available = TRUE
       AND m.skill_embedding IS NOT NULL
-      AND 1 - (m.skill_embedding <=> query_embedding) > match_threshold
+      AND (1 - (m.skill_embedding <=> query_embedding)) >= match_threshold
+      AND (
+          filter_category IS NULL 
+          OR filter_category = '' 
+          OR filter_category = ANY(m.expertise_tags)
+      )
     ORDER BY m.skill_embedding <=> query_embedding ASC
     LIMIT match_count;
 END;
-$$ LANGUAGE plpgsql STABLE;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
 -- -----------------------------------------------------------------------------
 -- 7. PERFORMANCE & VECTOR INDEXES
