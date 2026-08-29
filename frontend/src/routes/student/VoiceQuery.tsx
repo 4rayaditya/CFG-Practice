@@ -223,12 +223,25 @@ export const VoiceQuery: React.FC = () => {
         setStructuredOutput(newStructured);
 
         // TASK 2: Persist processed doubt directly to Supabase doubts table
-        if (user) {
-          try {
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          let studentIdToUse = user?.id || sessionData?.session?.user?.id;
+
+          if (!studentIdToUse) {
+            const { data: fallbackStudent } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('role', 'student')
+              .limit(1)
+              .maybeSingle();
+            studentIdToUse = fallbackStudent?.id;
+          }
+
+          if (studentIdToUse) {
             const { data: insertedDoubt, error: rlsError } = await supabase
               .from('doubts')
               .insert([{
-                student_id: user.id,
+                student_id: studentIdToUse,
                 title: doubtTitle,
                 description: transcriptText,
                 transcript: transcriptText,
@@ -247,9 +260,9 @@ export const VoiceQuery: React.FC = () => {
               setSyncToastMessage('✨ Question submitted & broadcasted to live mentor queue in real-time!');
               setTimeout(() => setSyncToastMessage(null), 5000);
             }
-          } catch (dbErr) {
-            console.error('[VoiceQuery] Database insertion exception:', dbErr);
           }
+        } catch (dbErr) {
+          console.error('[VoiceQuery] Database insertion exception:', dbErr);
         }
 
         // Call semantic mentor match

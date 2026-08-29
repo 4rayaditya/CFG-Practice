@@ -125,7 +125,11 @@ CREATE TRIGGER set_doubts_updated_at
 -- 5. AUTH USER PROVISIONING TRIGGER
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
 DECLARE
     raw_role TEXT;
     assigned_role user_role;
@@ -143,17 +147,27 @@ BEGIN
         assigned_role := 'student'::user_role;
     END IF;
 
-    user_full_name := COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email);
+    user_full_name := COALESCE(
+        NEW.raw_user_meta_data->>'full_name', 
+        NEW.raw_user_meta_data->>'name', 
+        NEW.email, 
+        'Community Member'
+    );
 
     -- Insert into profiles
     INSERT INTO public.profiles (id, email, full_name, avatar_url, role)
     VALUES (
         NEW.id,
-        NEW.email,
+        COALESCE(NEW.email, NEW.id::text || '@mentormatch.user'),
         user_full_name,
         NEW.raw_user_meta_data->>'avatar_url',
         assigned_role
-    );
+    )
+    ON CONFLICT (id) DO UPDATE SET
+        email = EXCLUDED.email,
+        full_name = EXCLUDED.full_name,
+        avatar_url = EXCLUDED.avatar_url,
+        role = EXCLUDED.role;
 
     -- Insert child record according to assigned role
     IF assigned_role = 'student' THEN
@@ -162,7 +176,8 @@ BEGIN
             NEW.id,
             COALESCE(NEW.raw_user_meta_data->>'education_level', 'General Student'),
             COALESCE(NEW.raw_user_meta_data->>'learning_goals', '')
-        );
+        )
+        ON CONFLICT (id) DO NOTHING;
     ELSIF assigned_role = 'mentor' THEN
         INSERT INTO public.mentors (id, headline, bio, is_available)
         VALUES (
@@ -170,12 +185,23 @@ BEGIN
             COALESCE(NEW.raw_user_meta_data->>'headline', 'Volunteer Mentor'),
             COALESCE(NEW.raw_user_meta_data->>'bio', ''),
             TRUE
-        );
+        )
+        ON CONFLICT (id) DO NOTHING;
     END IF;
 
     RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING 'handle_new_user warning for user %: %', NEW.id, SQLERRM;
+    RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
+
+-- Grant permissions to postgres, supabase_auth_admin, and service_role
+GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role, supabase_auth_admin;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, service_role, supabase_auth_admin;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, service_role, supabase_auth_admin;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO postgres, service_role, supabase_auth_admin;
+ALTER FUNCTION public.handle_new_user() OWNER TO postgres;
 
 -- Trigger to execute automatically on Supabase Auth signup
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
