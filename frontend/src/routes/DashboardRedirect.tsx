@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { Sparkles } from 'lucide-react';
 
 export const DashboardRedirect: React.FC = () => {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, getDashboardPath } = useAuth();
 
   if (isLoading) {
     return (
@@ -24,14 +24,6 @@ export const DashboardRedirect: React.FC = () => {
     return <Navigate to="/login" replace />;
   }
 
-  // Decode role and route automatically
-  switch (user.role) {
-    case 'mentor':
-      return <Navigate to="/mentor/doubt-board" replace />;
-    case 'admin':
-      return <Navigate to="/admin/analytics" replace />;
-    case 'student':
-    default:
-      return <Navigate to="/student/voice-query" replace />;
-  }
+  const destination = getDashboardPath(user.role);
+  return <Navigate to={destination} replace />;
 };

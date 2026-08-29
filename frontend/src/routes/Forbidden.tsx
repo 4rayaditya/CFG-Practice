@@ -4,21 +4,9 @@ import { ShieldAlert, ArrowLeft, UserCheck, Sparkles } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 export const Forbidden: React.FC = () => {
-  const { user } = useAuth();
+  const { user, getDashboardPath } = useAuth();
   const location = useLocation();
   const state = location.state as { allowedRoles?: string[]; attemptedPath?: string } | undefined;
-
-  const getDashboardPath = (role?: string) => {
-    switch (role) {
-      case 'mentor':
-        return '/mentor/doubt-board';
-      case 'admin':
-        return '/admin/analytics';
-      case 'student':
-      default:
-        return '/student/voice-query';
-    }
-  };
 
   return (
     <div className="max-w-md mx-auto my-12 p-8 sm:p-10 light-panel rounded-3xl border border-slate-200 text-center shadow-lg space-y-6">

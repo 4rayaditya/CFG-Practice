@@ -19,12 +19,12 @@ import {
 } from 'lucide-react';
 
 export const Login: React.FC = () => {
-  const { login, setRole, signInWithSupabase, signUpWithSupabase, isSupabaseActive } = useAuth();
+  const { login, setRole, signInWithSupabase, signUpWithSupabase, isSupabaseActive, getDashboardPath } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   // Define where to send the user after they log in
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
 
   // Mode: 'signin' or 'signup'
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
@@ -38,16 +38,8 @@ export const Login: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const getRoleDestination = (role: UserRole) => {
-    if (from && from !== '/login' && from !== '/403') return from;
-    switch (role) {
-      case 'mentor':
-        return '/mentor/doubt-board';
-      case 'admin':
-        return '/admin/analytics';
-      case 'student':
-      default:
-        return '/student/voice-query';
-    }
+    if (from && from !== '/login' && from !== '/403' && from !== '/forbidden') return from;
+    return getDashboardPath(role);
   };
 
   const handleQuickFill = (role: UserRole) => {
@@ -91,10 +83,7 @@ export const Login: React.FC = () => {
         setRole(dbRole);
         setSuccessMsg('Signed in successfully! Redirecting...');
         setTimeout(() => {
-          if (dbRole === 'student') navigate('/student/voice-query');
-          else if (dbRole === 'mentor') navigate('/mentor/doubt-board');
-          else if (dbRole === 'admin') navigate('/admin/analytics');
-          else navigate(from);
+          navigate(getRoleDestination(dbRole));
         }, 600);
       } else {
         const result = await signUpWithSupabase(email, password, fullName || 'Community Member', dbRole);
@@ -105,9 +94,7 @@ export const Login: React.FC = () => {
         }
         setSuccessMsg('Account created successfully! Redirecting to your community dashboard...');
         setTimeout(() => {
-          if (dbRole === 'student') navigate('/student/voice-query');
-          else if (dbRole === 'mentor') navigate('/mentor/doubt-board');
-          else navigate('/roadmap');
+          navigate(getDashboardPath(dbRole));
         }, 800);
       }
     } catch (err: any) {

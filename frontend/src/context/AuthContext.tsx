@@ -13,9 +13,45 @@ export interface AuthContextType {
   login: (role?: UserRole) => void;
   logout: () => Promise<void>;
   setRole: (role: UserRole) => void;
+  getDashboardPath: (role?: UserRole) => string;
   signInWithSupabase: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signUpWithSupabase: (email: string, password: string, fullName: string, role: UserRole) => Promise<{ success: boolean; error?: string }>;
 }
+
+export const getDashboardPath = (role?: UserRole): string => {
+  switch (role) {
+    case 'mentor':
+      return '/mentor/doubt-board';
+    case 'admin':
+      return '/admin/analytics';
+    case 'student':
+    default:
+      return '/student/voice-query';
+  }
+};
+
+export const sanitizeRole = (rawRole: any): UserRole => {
+  const normalized = String(rawRole || '').toLowerCase().trim();
+  if (normalized === 'volunteer' || normalized === 'mentor') return 'mentor';
+  if (normalized === 'director' || normalized === 'admin') return 'admin';
+  return 'student';
+};
+
+export const decodeRoleFromJwt = (token: string | null): UserRole => {
+  if (!token) return 'student';
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return 'student';
+    const payload = JSON.parse(atob(parts[1]));
+    const roleCandidate = 
+      payload.user_metadata?.role || 
+      payload.app_metadata?.role || 
+      payload.role;
+    return sanitizeRole(roleCandidate);
+  } catch {
+    return 'student';
+  }
+};
 
 const mockUsers: Record<UserRole, User> = {
   student: {
@@ -65,13 +101,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(data.session);
           setToken(data.session.access_token);
           localStorage.setItem('mm_auth_token', data.session.access_token);
-          const metaRole = (data.session.user.user_metadata?.role as UserRole) || 'student';
+          
+          const metaRole = sanitizeRole(
+            data.session.user.user_metadata?.role || 
+            data.session.user.app_metadata?.role || 
+            decodeRoleFromJwt(data.session.access_token)
+          );
+
           setUser({
             id: data.session.user.id,
             name: data.session.user.user_metadata?.full_name || data.session.user.email?.split('@')[0] || 'User',
             email: data.session.user.email || '',
             role: metaRole,
           });
+          setCurrentRole(metaRole);
+          localStorage.setItem('mm_user_role', metaRole);
         }
         setIsLoading(false);
       }).catch(() => {
@@ -84,16 +128,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session) {
           setToken(session.access_token);
           localStorage.setItem('mm_auth_token', session.access_token);
-          const metaRole = (session.user.user_metadata?.role as UserRole) || 'student';
+          
+          const metaRole = sanitizeRole(
+            session.user.user_metadata?.role || 
+            session.user.app_metadata?.role || 
+            decodeRoleFromJwt(session.access_token)
+          );
+
           setUser({
             id: session.user.id,
             name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
             email: session.user.email || '',
             role: metaRole,
           });
+          setCurrentRole(metaRole);
+          localStorage.setItem('mm_user_role', metaRole);
         } else {
           setToken(null);
           localStorage.removeItem('mm_auth_token');
+          // In demo mode or logout, fall back to mock current role or null if signed out
           setUser(null);
         }
         setIsLoading(false);
@@ -110,9 +163,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = (role: UserRole = 'student') => {
-    setCurrentRole(role);
-    setUser(mockUsers[role]);
-    localStorage.setItem('mm_user_role', role);
+    const validRole = sanitizeRole(role);
+    setCurrentRole(validRole);
+    setUser(mockUsers[validRole]);
+    localStorage.setItem('mm_user_role', validRole);
   };
 
   const logout = async () => {
@@ -126,9 +180,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const setRole = (role: UserRole) => {
-    setCurrentRole(role);
-    setUser(mockUsers[role]);
-    localStorage.setItem('mm_user_role', role);
+    const validRole = sanitizeRole(role);
+    setCurrentRole(validRole);
+    setUser(mockUsers[validRole]);
+    localStorage.setItem('mm_user_role', validRole);
   };
 
   const signInWithSupabase = async (email: string, password: string) => {
@@ -149,13 +204,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(data.session);
         setToken(data.session.access_token);
         localStorage.setItem('mm_auth_token', data.session.access_token);
-        const metaRole = (data.user.user_metadata?.role as UserRole) || 'student';
+        
+        const metaRole = sanitizeRole(
+          data.user.user_metadata?.role || 
+          data.user.app_metadata?.role || 
+          decodeRoleFromJwt(data.session.access_token)
+        );
+
         setUser({
           id: data.user.id,
           name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'User',
           email: data.user.email || '',
           role: metaRole,
         });
+        setCurrentRole(metaRole);
+        localStorage.setItem('mm_user_role', metaRole);
       }
       setIsLoading(false);
       return { success: true };
@@ -163,13 +226,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
       return { success: false, error: err.message || 'Login failed' };
     }
-  };
-
-  const sanitizeRole = (rawRole: string): UserRole => {
-    const normalized = (rawRole || '').toLowerCase().trim();
-    if (normalized === 'volunteer' || normalized === 'mentor') return 'mentor';
-    if (normalized === 'director' || normalized === 'admin') return 'admin';
-    return 'student';
   };
 
   const signUpWithSupabase = async (email: string, password: string, fullName: string, role: UserRole) => {
@@ -200,6 +256,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(data.session);
         setToken(data.session.access_token);
         localStorage.setItem('mm_auth_token', data.session.access_token);
+        
+        setUser({
+          id: data.session.user.id,
+          name: data.session.user.user_metadata?.full_name || fullName || 'User',
+          email: data.session.user.email || email,
+          role: dbRole,
+        });
+        setCurrentRole(dbRole);
+        localStorage.setItem('mm_user_role', dbRole);
       }
       setIsLoading(false);
       return { success: true };
@@ -221,6 +286,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         logout,
         setRole,
+        getDashboardPath,
         signInWithSupabase,
         signUpWithSupabase,
       }}
