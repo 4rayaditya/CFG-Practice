@@ -98,13 +98,121 @@ export const api = {
     return await res.json();
   },
 
-  async generateRoadmap(goal: string): Promise<Record<string, unknown>> {
-    const res = await fetch(`${API_BASE_URL}/api/roadmap`, {
+  async generateRoadmap(params: {
+    student_goal: string;
+    current_skill_level?: string;
+    target_timeline?: string;
+    focus_areas?: string[];
+  }): Promise<{
+    success: boolean;
+    student_goal: string;
+    roadmap: {
+      track_title: string;
+      summary: string;
+      total_estimated_hours: number;
+      skill_level: string;
+      target_timeline: string;
+      milestones: Array<{
+        id: number;
+        title: string;
+        description: string;
+        estimated_hours: number;
+        subtasks: string[];
+        resources: Array<{ name: string; url: string; type?: string }>;
+        checkpoint_project: string;
+        key_skills: string[];
+      }>;
+    };
+    processing_time_ms: number;
+  }> {
+    const token = localStorage.getItem('mm_auth_token');
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_BASE_URL}/api/generate-roadmap`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ goal }),
+      headers,
+      body: JSON.stringify(params),
     });
-    if (!res.ok) throw new Error('Roadmap generation failed');
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ detail: 'Roadmap generation failed' }));
+      throw new Error(errorData.detail || `Roadmap generation failed with status ${res.status}`);
+    }
+    return await res.json();
+  },
+
+  async saveRoadmap(params: {
+    student_goal: string;
+    roadmap: Record<string, unknown>;
+  }): Promise<{
+    success: boolean;
+    roadmap_id: string;
+    saved_roadmap: Record<string, unknown>;
+    milestone_count: number;
+    processing_time_ms: number;
+  }> {
+    const token = localStorage.getItem('mm_auth_token');
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_BASE_URL}/api/save-roadmap`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ detail: 'Save roadmap failed' }));
+      throw new Error(errorData.detail || `Save roadmap failed with status ${res.status}`);
+    }
+    return await res.json();
+  },
+
+  async getStudentRoadmaps(): Promise<Array<Record<string, unknown>>> {
+    const token = localStorage.getItem('mm_auth_token');
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_BASE_URL}/api/student/roadmaps`, {
+      headers,
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch student roadmaps with status ${res.status}`);
+    }
+    return await res.json();
+  },
+
+  async updateMilestoneProgress(milestoneId: string, data: {
+    is_completed?: boolean;
+    completed_subtasks?: number[];
+    progress_percentage?: number;
+  }): Promise<Record<string, unknown>> {
+    const token = localStorage.getItem('mm_auth_token');
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_BASE_URL}/api/milestones/${milestoneId}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ detail: 'Failed to update milestone' }));
+      throw new Error(errorData.detail || `Milestone update failed with status ${res.status}`);
+    }
     return await res.json();
   },
 
