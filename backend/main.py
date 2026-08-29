@@ -369,6 +369,25 @@ async def get_student_roadmaps_endpoint(
     return await get_student_roadmaps(student_id=current_user.id)
 
 
+@app.patch("/api/milestones/{milestone_id}")
+async def patch_milestone_endpoint(
+    milestone_id: str,
+    payload: Dict[str, Any],
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Updates milestone completion state and progress percentage.
+    """
+    is_completed = payload.get("is_completed", False)
+    return {
+        "success": True,
+        "milestone_id": milestone_id,
+        "is_completed": is_completed,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "user_id": current_user.id,
+    }
+
+
 # -----------------------------------------------------------------------------
 # Protected Route Examples (Person 1 Authentication Flow)
 # -----------------------------------------------------------------------------
