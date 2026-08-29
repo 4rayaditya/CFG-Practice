@@ -24,15 +24,77 @@ export const api = {
     }
   },
 
-  async uploadAudio(audioBlob: Blob): Promise<{ text: string; structuredDoubt: Record<string, unknown> }> {
+  async uploadAudio(audioBlob: Blob, filename = 'recording.webm'): Promise<{
+    success: boolean;
+    transcript: string;
+    file_name: string;
+    file_size_bytes: number;
+    audio_format: string;
+    processing_time_ms: number;
+    user_id: string;
+    user_role: string;
+  }> {
     const formData = new FormData();
-    formData.append('file', audioBlob, 'query.wav');
+    formData.append('file', audioBlob, filename);
+
+    const token = localStorage.getItem('mm_auth_token');
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
 
     const res = await fetch(`${API_BASE_URL}/api/process-audio`, {
       method: 'POST',
+      headers,
       body: formData,
     });
-    if (!res.ok) throw new Error('Audio processing failed');
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ detail: 'Audio processing failed' }));
+      throw new Error(errorData.detail || `Audio upload failed with status ${res.status}`);
+    }
+    return await res.json();
+  },
+
+  async matchMentors(params: {
+    title: string;
+    description?: string;
+    category?: string;
+    match_count?: number;
+    match_threshold?: number;
+  }): Promise<{
+    success: boolean;
+    query_title: string;
+    query_category?: string;
+    embedding_dimensions: number;
+    matches: Array<{
+      mentor_id: string;
+      full_name: string;
+      headline: string;
+      bio?: string;
+      expertise_tags: string[];
+      rating: number;
+      similarity: number;
+      match_percentage: string;
+    }>;
+    processing_time_ms: number;
+  }> {
+    const token = localStorage.getItem('mm_auth_token');
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_BASE_URL}/api/match-mentor`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ detail: 'Mentor matching failed' }));
+      throw new Error(errorData.detail || `Mentor matching failed with status ${res.status}`);
+    }
     return await res.json();
   },
 
