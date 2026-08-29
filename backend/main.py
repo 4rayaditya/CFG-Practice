@@ -117,7 +117,7 @@ def health_check():
         "service": "MentorMatch AI Backend",
         "version": "1.0.0",
         "cors_origins": origins,
-        "auth_middleware": "Local Supabase JWT (HS256)",
+        "auth_middleware": "Supabase JWT (HS256 with Supabase Auth API Fallback)",
         "groq_whisper_configured": groq_configured,
         "groq_llama_classifier_configured": groq_configured
     }
