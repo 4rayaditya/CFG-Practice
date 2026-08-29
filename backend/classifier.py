@@ -157,10 +157,11 @@ def classify_transcript(transcript: str) -> StructuredDoubt:
             system_prompt = (
                 "You are an expert AI mentor and question classifier for MentorMatch AI. "
                 "Your task is to analyze a student's spoken voice doubt transcript and structure it into a clean JSON object.\n"
+                "MULTILINGUAL INSTRUCTION: If the user's transcript is in Hindi, Hinglish, or mixed multilingual speech (e.g. 'HTML इस पर समझाओ मेरे को' or 'React state kaise banaye'), accurately translate and distill the core technical question into clear English before generating the title, description, category, and tags (e.g., Title: 'Foundational Explanation and Core Concepts of HTML', Description: 'Student is requesting a foundational explanation and conceptual overview of HTML for web development.').\n"
                 "You MUST adhere strictly to this JSON schema:\n"
                 "{\n"
-                '  "title": "Concise headline summarizing the core doubt (max 8-10 words)",\n'
-                '  "description": "Clear 1-2 sentence explanation of the technical question or roadblock",\n'
+                '  "title": "Concise headline summarizing the core doubt in English (max 8-10 words)",\n'
+                '  "description": "Clear 1-2 sentence explanation of the technical question or roadblock in English",\n'
                 '  "category": "Exactly one of: Frontend, Backend, AI/ML, System Design, Algorithms, Career & Projects, General",\n'
                 '  "tags": ["keyword1", "keyword2", "keyword3"],\n'
                 '  "urgency": "Standard" or "Urgent"\n'

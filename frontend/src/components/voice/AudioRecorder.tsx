@@ -52,8 +52,11 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // Format seconds to mm:ss
+  // Format seconds to mm:ss safely with NaN/Infinity guards
   const formatTime = (seconds: number): string => {
+    if (!seconds || isNaN(seconds) || !isFinite(seconds) || seconds < 0) {
+      return '00:00';
+    }
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
@@ -316,6 +319,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         await onSubmit(audioBlob, recordingDuration);
       } catch (err: any) {
         setErrorMessage(err?.message || 'Failed to submit voice query.');
+      } finally {
         setRecorderState('recorded');
       }
     }
@@ -540,7 +544,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
 
         {/* Educational Micro-Footer */}
         <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-          <span>AI Model: Whisper + GPT-4o-mini</span>
+          <span>AI Model: Groq Whisper + Llama 3 (Zero Cost)</span>
           <span>Offline PWA Ready</span>
         </div>
       </div>
