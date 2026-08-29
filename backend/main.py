@@ -22,6 +22,19 @@ from embedding_service import (
     match_mentors_service,
     compute_query_embedding
 )
+from roadmap_service import (
+    GenerateRoadmapRequest,
+    StructuredRoadmap,
+    GenerateRoadmapResponse,
+    generate_career_roadmap
+)
+from roadmap_storage import (
+    SaveRoadmapRequest,
+    SaveRoadmapResponse,
+    PersistedRoadmap,
+    save_roadmap_transaction,
+    get_student_roadmaps
+)
 
 load_dotenv()
 
@@ -278,6 +291,82 @@ async def match_mentor_endpoint(
         matches=matches,
         processing_time_ms=processing_time_ms,
     )
+
+
+# -----------------------------------------------------------------------------
+# Person 2: Career Track Roadmap Generator (CUJ 1 & PRD Row 47 - Groq Llama 3)
+# -----------------------------------------------------------------------------
+
+@app.post("/api/generate-roadmap", response_model=GenerateRoadmapResponse)
+@app.post("/api/roadmap", response_model=GenerateRoadmapResponse)
+def generate_roadmap_endpoint(
+    payload: GenerateRoadmapRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Accepts student_goal, current_skill_level, and target_timeline,
+    and uses Groq Llama 3 with structured JSON mode to generate a comprehensive
+    Career Track roadmap containing milestones, subtasks, resources, and checkpoint projects.
+    """
+    start_time = time.perf_counter()
+
+    if not payload.student_goal or not payload.student_goal.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="student_goal is required for roadmap generation.",
+        )
+
+    roadmap = generate_career_roadmap(payload)
+    processing_time_ms = round((time.perf_counter() - start_time) * 1000, 2)
+
+    return GenerateRoadmapResponse(
+        success=True,
+        student_goal=payload.student_goal,
+        roadmap=roadmap,
+        processing_time_ms=processing_time_ms,
+    )
+
+
+# -----------------------------------------------------------------------------
+# Person 2: Atomic Roadmap Database Persistence & Retrieval (CUJ 1 & PRD Row 47)
+# -----------------------------------------------------------------------------
+
+@app.post("/api/save-roadmap", response_model=SaveRoadmapResponse)
+async def save_roadmap_endpoint(
+    payload: SaveRoadmapRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Persists a generated Career Track roadmap and its child milestones
+    atomically into Supabase linked to the authenticated student's profile.
+    """
+    start_time = time.perf_counter()
+
+    persisted_roadmap = await save_roadmap_transaction(
+        student_id=current_user.id,
+        goal=payload.student_goal,
+        roadmap=payload.roadmap,
+    )
+
+    processing_time_ms = round((time.perf_counter() - start_time) * 1000, 2)
+
+    return SaveRoadmapResponse(
+        success=True,
+        roadmap_id=persisted_roadmap.id,
+        saved_roadmap=persisted_roadmap,
+        milestone_count=len(persisted_roadmap.milestones),
+        processing_time_ms=processing_time_ms,
+    )
+
+
+@app.get("/api/student/roadmaps", response_model=List[PersistedRoadmap])
+async def get_student_roadmaps_endpoint(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Retrieves all saved Career Track roadmaps and their milestones for the current student.
+    """
+    return await get_student_roadmaps(student_id=current_user.id)
 
 
 # -----------------------------------------------------------------------------
