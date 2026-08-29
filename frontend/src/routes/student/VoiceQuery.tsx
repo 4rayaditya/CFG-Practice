@@ -7,7 +7,8 @@ import {
   HelpCircle,
   Clock,
   Layers,
-  ArrowRight
+  ArrowRight,
+  RotateCcw
 } from 'lucide-react';
 import { AudioRecorder } from '../../components/voice/AudioRecorder';
 import { MentorMatchGrid, Mentor } from '../../components/mentors/MentorMatchGrid';
@@ -53,21 +54,52 @@ export const VoiceQuery: React.FC = () => {
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isMatchingMentors, setIsMatchingMentors] = useState(false);
-  const [matchedMentorsList, setMatchedMentorsList] = useState<Mentor[]>(DEFAULT_MATCHED_MENTORS);
+
+  // Initialize from localStorage to survive page refreshes
+  const [matchedMentorsList, setMatchedMentorsList] = useState<Mentor[]>(() => {
+    try {
+      const saved = localStorage.getItem('mm_current_mentors');
+      return saved ? JSON.parse(saved) : DEFAULT_MATCHED_MENTORS;
+    } catch {
+      return DEFAULT_MATCHED_MENTORS;
+    }
+  });
+
   const [lastAudioMeta, setLastAudioMeta] = useState<{ sizeKb: number; duration: number } | null>(null);
+  
   const [structuredOutput, setStructuredOutput] = useState<{
     transcript?: string;
     summary?: string;
     category?: string;
     tags?: string[];
     urgency?: string;
-  } | null>({
-    transcript: 'I am building a responsive React dashboard with TypeScript and need advice on architecting role-based routing and audio streaming.',
-    summary: 'Student seeking code architecture guidance on React Router role guards, HTML5 MediaRecorder voice capture, and vector matching.',
-    category: 'Frontend',
-    tags: ['react', 'typescript', 'voice-intake', 'web-audio'],
-    urgency: 'Standard',
+  } | null>(() => {
+    try {
+      const saved = localStorage.getItem('mm_current_doubt');
+      return saved ? JSON.parse(saved) : {
+        transcript: 'I am building a responsive React dashboard with TypeScript and need advice on architecting role-based routing and audio streaming.',
+        summary: 'Student seeking code architecture guidance on React Router role guards, HTML5 MediaRecorder voice capture, and vector matching.',
+        category: 'Frontend',
+        tags: ['react', 'typescript', 'voice-intake', 'web-audio'],
+        urgency: 'Standard',
+      };
+    } catch {
+      return null;
+    }
   });
+
+  // Save to localStorage automatically on update
+  React.useEffect(() => {
+    if (structuredOutput) {
+      localStorage.setItem('mm_current_doubt', JSON.stringify(structuredOutput));
+    }
+  }, [structuredOutput]);
+
+  React.useEffect(() => {
+    if (matchedMentorsList && matchedMentorsList.length > 0) {
+      localStorage.setItem('mm_current_mentors', JSON.stringify(matchedMentorsList));
+    }
+  }, [matchedMentorsList]);
 
   // Monitor network status
   React.useEffect(() => {
@@ -80,6 +112,13 @@ export const VoiceQuery: React.FC = () => {
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  const handleResetDoubt = () => {
+    setStructuredOutput(null);
+    setMatchedMentorsList(DEFAULT_MATCHED_MENTORS);
+    localStorage.removeItem('mm_current_doubt');
+    localStorage.removeItem('mm_current_mentors');
+  };
 
   const handleSubmitDoubt = async (blob: Blob, durationSeconds: number) => {
     setIsProcessing(true);
@@ -97,13 +136,14 @@ export const VoiceQuery: React.FC = () => {
         try {
           const result = await api.uploadAudio(blob, 'doubt-intake.webm');
           transcriptText = result.transcript || transcriptText;
-          setStructuredOutput({
+          const newStructured = {
             transcript: transcriptText,
             summary: 'Student seeking personalized guidance on technical architecture and domain best practices.',
             category: categoryVal,
             tags: ['voice-query', 'mentorship', 'portfolio', 'web-audio'],
             urgency: 'Standard',
-          });
+          };
+          setStructuredOutput(newStructured);
 
           // Call semantic mentor match
           try {
@@ -204,9 +244,21 @@ export const VoiceQuery: React.FC = () => {
               <CheckCircle2 className="w-5 h-5 text-emerald-600" />
               <h3 className="font-bold text-slate-900 text-base">Question Processed Successfully</h3>
             </div>
-            <span className="text-xs px-3 py-1 rounded-full bg-sky-50 text-sky-700 border border-sky-200 font-medium">
-              Topic: {structuredOutput.category}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs px-3 py-1 rounded-full bg-sky-50 text-sky-700 border border-sky-200 font-medium">
+                Topic: {structuredOutput.category}
+              </span>
+              <button
+                type="button"
+                id="btn-clear-doubt"
+                onClick={handleResetDoubt}
+                className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-rose-600 bg-slate-100 hover:bg-rose-50 px-2.5 py-1 rounded-full border border-slate-200 transition cursor-pointer font-medium"
+                title="Clear question and start over"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>New Question</span>
+              </button>
+            </div>
           </div>
 
           <div className="space-y-3 text-sm">
