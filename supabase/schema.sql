@@ -127,11 +127,22 @@ CREATE TRIGGER set_doubts_updated_at
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
+    raw_role TEXT;
     assigned_role user_role;
     user_full_name TEXT;
 BEGIN
-    -- Extract role from metadata or default to 'student'
-    assigned_role := COALESCE((NEW.raw_user_meta_data->>'role')::user_role, 'student'::user_role);
+    -- Extract role string and normalize to lowercase
+    raw_role := LOWER(COALESCE(NEW.raw_user_meta_data->>'role', 'student'));
+
+    -- Map UI role terms ('volunteer' -> 'mentor', 'director' -> 'admin') safely to valid user_role enum
+    IF raw_role = 'volunteer' OR raw_role = 'mentor' THEN
+        assigned_role := 'mentor'::user_role;
+    ELSIF raw_role = 'director' OR raw_role = 'admin' THEN
+        assigned_role := 'admin'::user_role;
+    ELSE
+        assigned_role := 'student'::user_role;
+    END IF;
+
     user_full_name := COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email);
 
     -- Insert into profiles

@@ -75,6 +75,12 @@ export const Login: React.FC = () => {
     setLoading(true);
 
     try {
+      // Map UI role state to strict database ENUM values ('student', 'mentor', 'admin')
+      const dbRole: UserRole = 
+        (selectedRole as string) === 'Volunteer' || selectedRole === 'mentor' ? 'mentor' :
+        (selectedRole as string) === 'Director' || selectedRole === 'admin' ? 'admin' :
+        'student';
+
       if (authMode === 'signin') {
         const result = await signInWithSupabase(email, password);
         if (!result.success) {
@@ -82,16 +88,16 @@ export const Login: React.FC = () => {
           setLoading(false);
           return;
         }
-        setRole(selectedRole);
+        setRole(dbRole);
         setSuccessMsg('Signed in successfully! Redirecting...');
         setTimeout(() => {
-          if (selectedRole === 'student') navigate('/student/voice-query');
-          else if (selectedRole === 'mentor') navigate('/mentor/doubt-board');
-          else if (selectedRole === 'admin') navigate('/admin/analytics');
+          if (dbRole === 'student') navigate('/student/voice-query');
+          else if (dbRole === 'mentor') navigate('/mentor/doubt-board');
+          else if (dbRole === 'admin') navigate('/admin/analytics');
           else navigate(from);
         }, 600);
       } else {
-        const result = await signUpWithSupabase(email, password, fullName || 'Community Member', selectedRole);
+        const result = await signUpWithSupabase(email, password, fullName || 'Community Member', dbRole);
         if (!result.success) {
           setErrorMsg(result.error || 'Sign-up failed. Please check your details.');
           setLoading(false);
@@ -99,8 +105,8 @@ export const Login: React.FC = () => {
         }
         setSuccessMsg('Account created successfully! Redirecting to your community dashboard...');
         setTimeout(() => {
-          if (selectedRole === 'student') navigate('/student/voice-query');
-          else if (selectedRole === 'mentor') navigate('/mentor/doubt-board');
+          if (dbRole === 'student') navigate('/student/voice-query');
+          else if (dbRole === 'mentor') navigate('/mentor/doubt-board');
           else navigate('/roadmap');
         }, 800);
       }

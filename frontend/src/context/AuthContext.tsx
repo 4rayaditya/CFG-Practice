@@ -165,10 +165,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const sanitizeRole = (rawRole: string): UserRole => {
+    const normalized = (rawRole || '').toLowerCase().trim();
+    if (normalized === 'volunteer' || normalized === 'mentor') return 'mentor';
+    if (normalized === 'director' || normalized === 'admin') return 'admin';
+    return 'student';
+  };
+
   const signUpWithSupabase = async (email: string, password: string, fullName: string, role: UserRole) => {
     setIsLoading(true);
+    const dbRole = sanitizeRole(role);
     if (!isSupabaseConfigured) {
-      login(role);
+      login(dbRole);
       setIsLoading(false);
       return { success: true };
     }
@@ -180,7 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         options: {
           data: {
             full_name: fullName,
-            role: role,
+            role: dbRole,
           },
         },
       });
