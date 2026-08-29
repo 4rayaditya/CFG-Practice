@@ -21,6 +21,8 @@ export interface Doubt {
   category: string;
   matchedMentors?: string[];
   similarityScore?: number;
+  tags?: string[];
+  transcript?: string;
   answer?: string;
   answeredBy?: string;
   answeredAt?: string;
