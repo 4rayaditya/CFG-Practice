@@ -9,25 +9,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Supabase JWT Secret configured in Supabase Project Settings -> API -> JWT Settings (Min 32 bytes recommended)
-SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "super-secret-supabase-jwt-key-for-development-32-chars-min").strip().strip('"').strip("'")
+SUPABASE_JWT_SECRET = (os.getenv("SUPABASE_JWT_SECRET") or "super-secret-supabase-jwt-key-for-development-32-chars-min").strip().strip('"').strip("'")
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip().rstrip("/").strip('"').strip("'")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "").strip().strip('"').strip("'")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip().strip('"').strip("'")
 
-# HTTPBearer scheme to extract Authorization: Bearer <token>
 security = HTTPBearer(auto_error=False)
 
-
 class AuthenticatedUser(BaseModel):
-    """Represents a validated Supabase user extracted locally from the verified JWT."""
     id: str
     email: Optional[str] = None
     role: str = "student"
     aud: Optional[str] = None
     app_metadata: Dict[str, Any] = {}
     user_metadata: Dict[str, Any] = {}
-
 
 def verify_supabase_jwt(token: str) -> AuthenticatedUser:
     """
@@ -49,7 +44,7 @@ def verify_supabase_jwt(token: str) -> AuthenticatedUser:
                     "verify_aud": False,
                 }
             )
-
+            
             user_id = payload.get("sub")
             if user_id:
                 app_metadata = payload.get("app_metadata", {})
@@ -74,17 +69,15 @@ def verify_supabase_jwt(token: str) -> AuthenticatedUser:
                 detail="Authentication token has expired. Please refresh your session.",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        except (jwt.InvalidSignatureError, jwt.DecodeError, Exception) as local_err:
-            # Continue to Supabase Auth API fallback only if online URL is configured
-            last_error = str(local_err)
-    else:
-        last_error = "SUPABASE_JWT_SECRET is not configured"
+        except Exception:
+            # Fall through to Supabase Auth API method
+            pass
 
     # Method 2: Supabase Auth API verification (handles RS256/ES256/HS256 natively)
     api_key = SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY
     if SUPABASE_URL and not SUPABASE_URL.startswith("https://your-") and api_key and not api_key.startswith("your-"):
         try:
-            with httpx.Client(timeout=4.0) as client:
+            with httpx.Client(timeout=5.0) as client:
                 resp = client.get(
                     f"{SUPABASE_URL}/auth/v1/user",
                     headers={
@@ -114,28 +107,18 @@ def verify_supabase_jwt(token: str) -> AuthenticatedUser:
         headers={"WWW-Authenticate": "Bearer"},
     )
 
-
 async def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Security(security)
 ) -> AuthenticatedUser:
-    """
-    FastAPI dependency that extracts and validates the Bearer token from the Authorization header.
-    """
     if not credentials or not credentials.credentials:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authorization header missing or invalid format. Expected 'Bearer <token>'",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
     return verify_supabase_jwt(credentials.credentials)
 
-
 def require_role(allowed_roles: List[str]):
-    """
-    Role-Based Access Control (RBAC) dependency factory.
-    Example: Depends(require_role(["mentor", "admin"]))
-    """
     async def role_checker(
         current_user: AuthenticatedUser = Depends(get_current_user)
     ) -> AuthenticatedUser:
@@ -145,5 +128,4 @@ def require_role(allowed_roles: List[str]):
                 detail=f"Forbidden: Access requires one of the following roles: {allowed_roles}. Your role is '{current_user.role}'.",
             )
         return current_user
-
     return role_checker
