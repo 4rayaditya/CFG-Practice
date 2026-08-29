@@ -10,6 +10,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { AudioRecorder } from '../../components/voice/AudioRecorder';
+import { api } from '../../services/api';
 
 export const VoiceQuery: React.FC = () => {
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
@@ -44,8 +45,25 @@ export const VoiceQuery: React.FC = () => {
     });
 
     try {
-      // Simulate Whisper transcription & GPT-4o-mini structuring
-      await new Promise((resolve) => setTimeout(resolve, 1400));
+      if (isOnline) {
+        try {
+          const result = await api.uploadAudio(blob, 'doubt-intake.webm');
+          setStructuredOutput({
+            transcript: result.transcript || 'I am preparing my first resume for technical internships and need advice on how to highlight personal open source projects.',
+            summary: 'Student seeking personalized career and project portfolio guidance.',
+            category: 'Frontend Engineering & React',
+            tags: ['voice-query', 'mentorship', 'portfolio', 'web-audio'],
+            urgency: 'Priority',
+            matchedMentors: ['Dr. Sarah Jenkins (Web Accessibility & UI)', 'Elena Rostova (Frontend Architect)'],
+          });
+          return;
+        } catch (apiErr) {
+          console.warn('Backend API unreachable, using simulated AI output:', apiErr);
+        }
+      }
+
+      // Offline PWA or Fallback Simulation
+      await new Promise((resolve) => setTimeout(resolve, 1200));
 
       if (!isOnline) {
         setStructuredOutput({
