@@ -31,91 +31,88 @@ class AuthenticatedUser(BaseModel):
 
 def verify_supabase_jwt(token: str) -> AuthenticatedUser:
     """
-    Verifies a Supabase JWT locally using the project's JWT Secret (HS256/RS256).
-    Performs zero network round-trips to Supabase for high throughput and sub-millisecond latency.
-    Falls back to Supabase Auth API verification if configured and local verification encounters a key/algorithm mismatch.
+    Verifies a Supabase JWT:
+    1. Attempts local symmetric verification (HS256) using project SUPABASE_JWT_SECRET.
+    2. Gracefully falls back to Supabase Auth API (GET /auth/v1/user) for asymmetric (RS256/ES256) tokens.
+    3. Rejects invalid or tampered tokens with HTTP 401.
     """
-    try:
-        # Decode and verify signature, expiration, and audience (accepting HS256, RS256, ES256)
-        payload = jwt.decode(
-            token,
-            SUPABASE_JWT_SECRET,
-            algorithms=["HS256", "RS256", "ES256"],
-            options={
-                "verify_signature": True,
-                "verify_exp": True,
-                "verify_aud": False,  # Checked below for flexibility
-            }
-        )
-
-        user_id = payload.get("sub")
-        if not user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token: missing subject (user ID)",
-                headers={"WWW-Authenticate": "Bearer"},
+    # Method 1: Local HS256 symmetric decoding
+    if SUPABASE_JWT_SECRET and len(SUPABASE_JWT_SECRET) >= 8:
+        try:
+            payload = jwt.decode(
+                token,
+                SUPABASE_JWT_SECRET,
+                algorithms=["HS256"],
+                options={
+                    "verify_signature": True,
+                    "verify_exp": True,
+                    "verify_aud": False,
+                }
             )
 
-        # Extract role: Check app_metadata -> user_metadata -> default 'student'
-        app_metadata = payload.get("app_metadata", {})
-        user_metadata = payload.get("user_metadata", {})
-        
-        user_role = (
-            app_metadata.get("role") 
-            or user_metadata.get("role") 
-            or payload.get("role") 
-            or "student"
-        )
+            user_id = payload.get("sub")
+            if user_id:
+                app_metadata = payload.get("app_metadata", {})
+                user_metadata = payload.get("user_metadata", {})
+                user_role = (
+                    app_metadata.get("role") 
+                    or user_metadata.get("role") 
+                    or payload.get("role") 
+                    or "student"
+                )
+                return AuthenticatedUser(
+                    id=str(user_id),
+                    email=payload.get("email"),
+                    role=str(user_role),
+                    aud=payload.get("aud"),
+                    app_metadata=app_metadata,
+                    user_metadata=user_metadata,
+                )
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication token has expired. Please refresh your session.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        except (jwt.InvalidSignatureError, jwt.DecodeError, Exception) as local_err:
+            # Continue to Supabase Auth API fallback only if online URL is configured
+            last_error = str(local_err)
+    else:
+        last_error = "SUPABASE_JWT_SECRET is not configured"
 
-        return AuthenticatedUser(
-            id=str(user_id),
-            email=payload.get("email"),
-            role=str(user_role),
-            aud=payload.get("aud"),
-            app_metadata=app_metadata,
-            user_metadata=user_metadata,
-        )
-
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication token has expired. Please refresh your session.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    except jwt.InvalidTokenError as exc:
-        # Fallback: If Supabase project is configured, verify token via Supabase Auth API
-        api_key = SUPABASE_ANON_KEY or SUPABASE_SERVICE_ROLE_KEY
-        if SUPABASE_URL and not SUPABASE_URL.startswith("https://your-") and api_key:
-            try:
-                with httpx.Client(timeout=4.0) as client:
-                    resp = client.get(
-                        f"{SUPABASE_URL}/auth/v1/user",
-                        headers={
-                            "apikey": api_key,
-                            "Authorization": f"Bearer {token}",
-                        }
+    # Method 2: Supabase Auth API verification (handles RS256/ES256/HS256 natively)
+    api_key = SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY
+    if SUPABASE_URL and not SUPABASE_URL.startswith("https://your-") and api_key and not api_key.startswith("your-"):
+        try:
+            with httpx.Client(timeout=4.0) as client:
+                resp = client.get(
+                    f"{SUPABASE_URL}/auth/v1/user",
+                    headers={
+                        "apikey": api_key,
+                        "Authorization": f"Bearer {token}",
+                    }
+                )
+                if resp.status_code == 200:
+                    user_data = resp.json()
+                    app_meta = user_data.get("app_metadata", {})
+                    user_meta = user_data.get("user_metadata", {})
+                    user_role = app_meta.get("role") or user_meta.get("role") or "student"
+                    return AuthenticatedUser(
+                        id=str(user_data.get("id")),
+                        email=user_data.get("email"),
+                        role=str(user_role),
+                        aud=user_data.get("aud"),
+                        app_metadata=app_meta,
+                        user_metadata=user_meta,
                     )
-                    if resp.status_code == 200:
-                        user_data = resp.json()
-                        app_meta = user_data.get("app_metadata", {})
-                        user_meta = user_data.get("user_metadata", {})
-                        user_role = app_meta.get("role") or user_meta.get("role") or "student"
-                        return AuthenticatedUser(
-                            id=str(user_data.get("id")),
-                            email=user_data.get("email"),
-                            role=str(user_role),
-                            aud=user_data.get("aud"),
-                            app_metadata=app_meta,
-                            user_metadata=user_meta,
-                        )
-            except Exception as net_err:
-                print(f"[WARN] Supabase online token verification fallback error: {net_err}")
+        except Exception as net_err:
+            print(f"[WARN] Supabase Auth API token check error: {net_err}")
 
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid authentication token: {str(exc)}",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid authentication token: signature verification failed.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
 
 
 async def get_current_user(
