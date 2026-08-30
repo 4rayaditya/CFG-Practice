@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Filter, 
@@ -19,95 +19,19 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import { saveLocalCachedDoubts, getLocalCachedDoubts } from '../../hooks/useRealtimeDoubts';
-import type { Doubt } from '../../types';
-
-export interface DirectoryMentor {
-  id: string;
-  fullName: string;
-  headline: string;
-  bio: string;
-  avatarUrl?: string;
-  expertiseTags: string[];
-  rating: number;
-  reviewsCount: number;
-  resolvedCount: number;
-  responseSpeed: string;
-  isAvailable: boolean;
-}
-
-export const DIRECTORY_MENTORS: DirectoryMentor[] = [
-  {
-    id: '00000000-0000-0000-0000-000000000002',
-    fullName: 'Dr. Sarah Jenkins',
-    headline: 'Lead Frontend Architect & React Core Contributor',
-    bio: '12+ years architecting web applications, accessible React component systems, and state management pipelines at top tech companies.',
-    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-    expertiseTags: ['React', 'Frontend', 'TypeScript', 'Tailwind CSS', 'Web Accessibility', 'UI Architecture'],
-    rating: 4.98,
-    reviewsCount: 142,
-    resolvedCount: 48,
-    responseSpeed: '< 3.2 mins',
-    isAvailable: true,
-  },
-  {
-    id: '00000000-0000-0000-0000-000000000003',
-    fullName: 'Elena Rostova',
-    headline: 'Senior Staff Web Engineer & Media Streaming Specialist',
-    bio: 'Specializes in Web Audio API, real-time audio visualization, MediaRecorder streams, and modern React performance optimizations.',
-    avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
-    expertiseTags: ['Frontend', 'Web Audio', 'MediaRecorder', 'TypeScript', 'React', 'Canvas API'],
-    rating: 4.92,
-    reviewsCount: 98,
-    resolvedCount: 29,
-    responseSpeed: '< 5.1 mins',
-    isAvailable: true,
-  },
-  {
-    id: '00000000-0000-0000-0000-000000000004',
-    fullName: 'Marcus Vance',
-    headline: 'Competitive Programmer & Algorithms Coach',
-    bio: 'Ex-FAANG engineer mentoring students in Dynamic Programming, Graph Theory, Trees, and technical coding interview strategies.',
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    expertiseTags: ['Algorithms', 'Data Structures', 'Dynamic Programming', 'Graph Theory', 'Python', 'C++'],
-    rating: 4.89,
-    reviewsCount: 176,
-    resolvedCount: 36,
-    responseSpeed: '< 4.5 mins',
-    isAvailable: true,
-  },
-  {
-    id: '00000000-0000-0000-0000-000000000005',
-    fullName: 'Alex Rivera',
-    headline: 'Principal Backend & Distributed Systems Architect',
-    bio: 'Expert in FastAPI, PostgreSQL, Supabase JWT auth pipelines, pgvector similarity search, and high-throughput REST APIs.',
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-    expertiseTags: ['Backend', 'FastAPI', 'PostgreSQL', 'Supabase', 'System Design', 'JWT Auth'],
-    rating: 4.95,
-    reviewsCount: 115,
-    resolvedCount: 42,
-    responseSpeed: '< 3.8 mins',
-    isAvailable: true,
-  },
-  {
-    id: '00000000-0000-0000-0000-000000000006',
-    fullName: 'Priya Sharma',
-    headline: 'AI/ML Systems Researcher & Speech Tech Lead',
-    bio: 'Building voice AI pipelines with Whisper, Groq Llama 3, pgvector similarity search, and high-velocity vector embeddings.',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    expertiseTags: ['AI/ML', 'Whisper', 'Groq', 'pgvector', 'Python', 'Vector Search'],
-    rating: 4.99,
-    reviewsCount: 160,
-    resolvedCount: 54,
-    responseSpeed: '< 2.9 mins',
-    isAvailable: true,
-  },
-];
+import { getPersistedMentors } from '../../data/mockData';
+import type { Doubt, MentorProfile } from '../../types';
 
 export const MentorDiscovery: React.FC = () => {
   const { user } = useAuth();
+  const [mentorsList, setMentorsList] = useState<MentorProfile[]>(() => getPersistedMentors());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState('All');
-  const [selectedMentorForQuestion, setSelectedMentorForQuestion] = useState<DirectoryMentor | null>(null);
+  const [selectedMentorForQuestion, setSelectedMentorForQuestion] = useState<MentorProfile | null>(null);
+
+  useEffect(() => {
+    setMentorsList(getPersistedMentors());
+  }, []);
 
   // Targeted Question Form State
   const [questionTitle, setQuestionTitle] = useState('');
@@ -116,10 +40,10 @@ export const MentorDiscovery: React.FC = () => {
   const [isSubmittingTargeted, setIsSubmittingTargeted] = useState(false);
   const [targetedSuccessToast, setTargetedSuccessToast] = useState<string | null>(null);
 
-  const tags = ['All', 'React', 'FastAPI', 'Algorithms', 'AI/ML', 'Frontend', 'Backend', 'pgvector', 'TypeScript'];
+  const tags = ['All', 'React', 'Python', 'AI/ML', 'Cloud', 'Mathematics', 'Algorithms', 'Career Strategy', 'TypeScript'];
 
-  const filteredMentors = DIRECTORY_MENTORS.filter((mentor) => {
-    const matchesTag = selectedTag === 'All' || mentor.expertiseTags.some((t) => t.toLowerCase() === selectedTag.toLowerCase());
+  const filteredMentors = mentorsList.filter((mentor) => {
+    const matchesTag = selectedTag === 'All' || mentor.expertiseTags.some((t) => t.toLowerCase().includes(selectedTag.toLowerCase()));
     const query = searchQuery.toLowerCase();
     const matchesSearch =
       !searchQuery ||
@@ -131,7 +55,7 @@ export const MentorDiscovery: React.FC = () => {
     return matchesTag && matchesSearch;
   });
 
-  const handleOpenTargetedModal = (mentor: DirectoryMentor) => {
+  const handleOpenTargetedModal = (mentor: MentorProfile) => {
     setSelectedMentorForQuestion(mentor);
     setQuestionTitle('');
     setQuestionDescription('');
@@ -209,7 +133,7 @@ export const MentorDiscovery: React.FC = () => {
 
         <div className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold self-start md:self-auto">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>{DIRECTORY_MENTORS.length} Active Domain Mentors</span>
+          <span>{mentorsList.length} Active Domain Mentors</span>
         </div>
       </div>
 
@@ -320,7 +244,7 @@ export const MentorDiscovery: React.FC = () => {
                 </span>
                 <span className="flex items-center gap-1 text-slate-600 font-mono">
                   <Clock className="w-3.5 h-3.5 text-slate-400" />
-                  <span>{mentor.responseSpeed}</span>
+                  <span>&lt; 4.2 mins</span>
                 </span>
               </div>
 

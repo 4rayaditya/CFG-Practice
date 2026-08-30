@@ -6,7 +6,9 @@ import {
   Sparkles, 
   RotateCcw,
   HardDrive,
-  CloudUpload
+  CloudUpload,
+  Calendar,
+  Heart
 } from 'lucide-react';
 import { AudioRecorder } from '../../components/voice/AudioRecorder';
 import { MentorMatchGrid, Mentor } from '../../components/mentors/MentorMatchGrid';
@@ -20,6 +22,7 @@ import { api } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import { StudentDoubtHub } from '../../components/student/StudentDoubtHub';
+import { StudentMentorRequestModal } from '../../components/student/StudentMentorRequestModal';
 import { saveLocalCachedDoubts, getLocalCachedDoubts } from '../../hooks/useRealtimeDoubts';
 import type { Doubt } from '../../types';
 
@@ -64,6 +67,7 @@ export const VoiceQuery: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isMatchingMentors, setIsMatchingMentors] = useState(false);
   const [syncToastMessage, setSyncToastMessage] = useState<string | null>(null);
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
 
   // Auto-sync callback when items finish flushing from IndexedDB
   const handleAutoSyncSuccess = useCallback(async (item: QueuedAudioUpload, result: any) => {
@@ -455,15 +459,25 @@ export const VoiceQuery: React.FC = () => {
           </p>
         </div>
 
-        {/* Status Indicators: Network & Pending Badge */}
-        <div className="flex items-center gap-2">
+        {/* Status Indicators: Network & Pending Badge & Request Guidance */}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            id="btn-open-guidance-modal"
+            onClick={() => setIsRequestModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-sm transition hover:scale-[1.02] active:scale-98"
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Request 1-on-1 Guidance</span>
+          </button>
+
           <PendingBadge
             count={pendingCount}
             isSyncing={isSyncing}
             onClick={isOnline ? flushQueueDispatcher : undefined}
           />
 
-          <div className={`flex items-center gap-2 px-3.5 py-1.5 rounded-2xl border text-xs font-semibold shadow-xs ${
+          <div className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl border text-xs font-semibold shadow-xs ${
             isOnline
               ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
               : 'bg-amber-50 text-amber-800 border-amber-200 animate-pulse'
@@ -661,6 +675,17 @@ export const VoiceQuery: React.FC = () => {
 
       {/* Embedded Student Doubt & Solution Hub */}
       <StudentDoubtHub />
+
+      {/* 1-on-1 Guidance Request Modal */}
+      <StudentMentorRequestModal
+        isOpen={isRequestModalOpen}
+        onClose={() => setIsRequestModalOpen(false)}
+        currentUser={user}
+        onSuccess={() => {
+          setSyncToastMessage('✨ Mentorship request submitted successfully to your volunteer mentor!');
+          setTimeout(() => setSyncToastMessage(null), 5000);
+        }}
+      />
 
       {/* PWA Install Prompt Banner */}
       <InstallPwaPrompt />

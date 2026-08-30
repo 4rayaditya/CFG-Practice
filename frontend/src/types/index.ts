@@ -1,7 +1,7 @@
 /**
  * ============================================================================
+ * Shifting Orbits — Cradle to College Platform
  * Centralized TypeScript Interface & Domain Type Definitions
- * Mirroring FastAPI Pydantic Models & Supabase PostgreSQL Database Schema
  * ============================================================================
  */
 
@@ -15,93 +15,174 @@ export type DoubtStatus = 'pending' | 'matched' | 'resolved' | 'cancelled';
 
 export type UrgencyLevel = 'Standard' | 'Urgent';
 
-export type SkillLevel = 'Beginner' | 'Intermediate' | 'Advanced';
+export type PriorityTier = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'NORMAL';
+
+export type CradleToCollegeStage = 
+  | 'Grade 8 (Middle School)'
+  | 'Grade 9 (Early High School)'
+  | 'Grade 10 (Secondary Boards)'
+  | 'Grade 11 (Senior Secondary)'
+  | 'Grade 12 (College Prep & Boards)'
+  | 'College 1st Year (Freshman)'
+  | 'College 2nd Year (Undergraduate)'
+  | 'Vocational & Career Launch';
 
 // ----------------------------------------------------------------------------
-// 2. FastAPI Mirror: Authenticated User Model (auth.py)
+// 2. Offline Home Visit Data Models (Speech-to-Text Field Logging)
 // ----------------------------------------------------------------------------
 
-export interface AuthenticatedUser {
+export interface OfflineHomeVisit {
   id: string;
-  email?: string | null;
-  role: string | UserRole;
-  aud?: string | null;
-  app_metadata: {
-    provider?: string;
-    providers?: string[];
-    role?: string;
-    [key: string]: unknown;
-  };
-  user_metadata: {
-    full_name?: string;
-    name?: string;
-    avatar_url?: string;
-    role?: string;
-    education_level?: string;
-    headline?: string;
-    bio?: string;
-    [key: string]: unknown;
-  };
+  studentId: string;
+  studentName: string;
+  mentorId: string;
+  mentorName: string;
+  visitDate: string; // ISO date string
+  rawSpeechTranscript: string;
+  summary: string;
+  livingEnvironment: string;
+  academicObservations: string;
+  riskLevel: 'Critical' | 'High' | 'Medium' | 'Low';
+  actionItems: string[];
+  tags: string[];
+  createdAt: string;
 }
 
 // ----------------------------------------------------------------------------
-// 3. FastAPI Mirror: Structured Doubt & Classifier Models (classifier.py)
+// 3. Rule-Based Student Priority Evaluation Models
 // ----------------------------------------------------------------------------
 
-export interface StructuredDoubt {
+export interface StudentPriorityEvaluation {
+  score: number; // 0 to 100
+  tier: PriorityTier;
+  badgeLabel: string;
+  badgeBg: string;
+  badgeText: string;
+  badgeBorder: string;
+  triggeredRules: string[];
+  recommendedAction: string;
+  requiresUrgentVisit: boolean;
+  daysSinceLastVisit: number;
+}
+
+// ----------------------------------------------------------------------------
+// 4. Student Detailed Dossier Models (15 Underprivileged Students)
+// ----------------------------------------------------------------------------
+
+export interface StudentDossier {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl: string;
+  cradleStage: CradleToCollegeStage;
+  age: number;
+  schoolOrCollege: string;
+  dreamCareer: string;
+  trackTitle: string;
+  attendanceRate: number; // Percentage (e.g. 72%)
+  academicScore: number; // Percentage (e.g. 68%)
+  learningInterests: string[];
+  skillsMastered: string[];
+  financialAidStatus: 'Full NGO Scholarship' | 'Subsidized Learning' | 'Hardware/Device Grant';
+  assignedMentorId: string;
+  assignedMentorName: string;
+  assignedMentorEmail: string;
+  lastHomeVisitDate: string; // ISO date string
+  homeVisits: OfflineHomeVisit[];
+  doubtsCount: number;
+  unresolvedDoubtsCount: number;
+  recentDoubts: Doubt[];
+  urgentFlag: boolean;
+  specialNotes?: string;
+  priorityEvaluation?: StudentPriorityEvaluation;
+  createdAt: string;
+}
+
+// ----------------------------------------------------------------------------
+// 5. Mentor Profile & SLA Governance Models (5 Mentors)
+// ----------------------------------------------------------------------------
+
+export interface MentorSLAStatus {
+  isInactiveOver10Days: boolean;
+  daysSinceLastActive: number;
+  noDoubtSolvedIn5Days: boolean;
+  daysSinceLastDoubtResolved: number;
+  noOfflineVisitIn30Days: boolean;
+  daysSinceLastOfflineVisit: number;
+  hasAnySlaBreach: boolean;
+}
+
+export interface MentorProfile {
+  id: string;
+  fullName: string;
+  email: string;
+  avatarUrl: string;
+  headline: string;
+  bio: string;
+  organization: string;
+  expertiseTags: string[];
+  rating: number;
+  resolvedCount: number;
+  assignedStudentIds: string[];
+  assignedStudents?: StudentDossier[];
+  lastActiveDate: string; // ISO date
+  lastDoubtResolvedDate: string; // ISO date
+  lastOfflineVisitDate: string; // ISO date
+  slaStatus: MentorSLAStatus;
+  isAvailable: boolean;
+  createdAt: string;
+}
+
+// ----------------------------------------------------------------------------
+// 6. 1-on-1 Mentorship Request Models
+// ----------------------------------------------------------------------------
+
+export interface MentorshipRequest {
+  id: string;
+  studentId: string;
+  studentName: string;
+  studentAvatar?: string;
+  mentorId: string;
+  mentorName: string;
+  topic: string;
+  description: string;
+  urgency: UrgencyLevel | string;
+  preferredMode: 'In-Person Home Visit' | 'Audio/Voice Call' | 'Doubt Chat Guidance';
+  status: 'pending' | 'accepted' | 'completed' | 'declined';
+  createdAt: string;
+}
+
+// ----------------------------------------------------------------------------
+// 7. Doubts, Roadmaps, and System Models
+// ----------------------------------------------------------------------------
+
+export interface Doubt {
+  id: string;
   title: string;
   description: string;
+  audioUrl?: string;
+  audio_url?: string;
+  studentId: string;
+  student_id?: string;
+  studentName?: string;
+  createdAt: string;
+  created_at?: string;
+  status: DoubtStatus;
   category: string;
-  tags: string[];
-  urgency: UrgencyLevel | string;
+  matchedMentors?: string[];
+  matched_mentor_ids?: string[];
+  assignedMentorId?: string;
+  assigned_mentor_id?: string;
+  similarityScore?: number;
+  tags?: string[];
+  transcript?: string;
+  urgency?: UrgencyLevel | string;
+  answer?: string;
+  answeredBy?: string;
+  answered_by_name?: string;
+  answeredAt?: string;
+  answered_at?: string;
 }
-
-export interface ClassifyDoubtRequest {
-  transcript: string;
-}
-
-export interface ClassifyDoubtResponse {
-  success: boolean;
-  raw_transcript: string;
-  structured_doubt: StructuredDoubt;
-  processing_time_ms: number;
-}
-
-// ----------------------------------------------------------------------------
-// 4. FastAPI Mirror: Semantic Mentor Matching Models (embedding_service.py)
-// ----------------------------------------------------------------------------
-
-export interface MentorMatchResult {
-  mentor_id: string;
-  full_name: string;
-  headline: string;
-  bio?: string | null;
-  expertise_tags: string[];
-  rating: number;
-  similarity: number;
-  match_percentage: string;
-}
-
-export interface MatchMentorRequest {
-  title: string;
-  description?: string;
-  category?: string;
-  match_count?: number;
-  match_threshold?: number;
-}
-
-export interface MatchMentorResponse {
-  success: boolean;
-  query_title: string;
-  query_category?: string | null;
-  embedding_dimensions: number;
-  matches: MentorMatchResult[];
-  processing_time_ms: number;
-}
-
-// ----------------------------------------------------------------------------
-// 5. FastAPI Mirror: Roadmap Generator Models (roadmap_service.py)
-// ----------------------------------------------------------------------------
 
 export interface ResourceItem {
   name: string;
@@ -139,179 +220,6 @@ export interface StructuredRoadmap {
   milestones: Milestone[];
 }
 
-export interface GenerateRoadmapRequest {
-  student_goal: string;
-  current_skill_level?: string;
-  target_timeline?: string;
-  focus_areas?: string[];
-}
-
-export interface GenerateRoadmapResponse {
-  success: boolean;
-  student_goal: string;
-  roadmap: StructuredRoadmap;
-  processing_time_ms: number;
-}
-
-// ----------------------------------------------------------------------------
-// 6. FastAPI Mirror: Persisted Roadmap & Storage Models (roadmap_storage.py)
-// ----------------------------------------------------------------------------
-
-export interface PersistedMilestone {
-  id: string;
-  roadmap_id: string;
-  step_number: number;
-  title: string;
-  description?: string | null;
-  estimated_hours: number;
-  subtasks: string[];
-  resources: Array<Record<string, unknown> | ResourceItem>;
-  checkpoint_project?: string | null;
-  key_skills: string[];
-  is_completed: boolean;
-  completed_at?: string | null;
-  created_at: string;
-}
-
-export interface PersistedRoadmap {
-  id: string;
-  student_id: string;
-  goal: string;
-  track_title: string;
-  summary?: string | null;
-  total_estimated_hours: number;
-  skill_level: string;
-  target_timeline: string;
-  is_active: boolean;
-  progress_percentage: number;
-  milestones: PersistedMilestone[];
-  created_at: string;
-  updated_at: string;
-}
-
-export interface SaveRoadmapRequest {
-  student_goal: string;
-  roadmap: StructuredRoadmap | Record<string, unknown>;
-}
-
-export interface SaveRoadmapResponse {
-  success: boolean;
-  roadmap_id: string;
-  saved_roadmap: PersistedRoadmap;
-  milestone_count: number;
-  processing_time_ms: number;
-}
-
-// ----------------------------------------------------------------------------
-// 7. FastAPI Mirror: Audio Processing Response (main.py)
-// ----------------------------------------------------------------------------
-
-export interface AudioProcessingResponse {
-  success: boolean;
-  transcript: string;
-  structured_doubt?: StructuredDoubt | null;
-  file_name: string;
-  file_size_bytes: number;
-  audio_format: string;
-  duration_seconds?: number | null;
-  processing_time_ms: number;
-  user_id: string;
-  user_role: string;
-}
-
-// ----------------------------------------------------------------------------
-// 8. Supabase PostgreSQL Relational Schema Entities (schema.sql)
-// ----------------------------------------------------------------------------
-
-export interface ProfileRow {
-  id: string; // references auth.users(id)
-  email: string;
-  full_name: string;
-  avatar_url?: string | null;
-  role: UserRole;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface StudentRow {
-  id: string; // references public.profiles(id)
-  education_level?: string | null;
-  learning_goals?: string | null;
-  learning_interests: string[];
-  created_at: string;
-  updated_at: string;
-}
-
-export interface MentorRow {
-  id: string; // references public.profiles(id)
-  headline?: string | null;
-  bio?: string | null;
-  expertise_tags: string[];
-  skill_embedding?: number[] | null; // 384-dimensional vector
-  is_available: boolean;
-  rating: number;
-  resolved_count: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface DoubtRow {
-  id: string;
-  student_id: string;
-  title: string;
-  description: string;
-  audio_url?: string | null;
-  transcript?: string | null;
-  category: string;
-  tags: string[];
-  status: DoubtStatus;
-  urgency: UrgencyLevel | string;
-  embedding?: number[] | null; // 384-dimensional vector
-  matched_mentor_ids: string[];
-  assigned_mentor_id?: string | null;
-  answer?: string | null;
-  answered_by_name?: string | null;
-  answered_at?: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface RoadmapRow {
-  id: string;
-  student_id: string;
-  goal: string;
-  track_title: string;
-  summary?: string | null;
-  total_estimated_hours: number;
-  skill_level: string;
-  target_timeline: string;
-  is_active: boolean;
-  progress_percentage: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface MilestoneRow {
-  id: string;
-  roadmap_id: string;
-  step_number: number;
-  title: string;
-  description?: string | null;
-  estimated_hours: number;
-  subtasks: string[];
-  resources: Array<Record<string, unknown>>;
-  checkpoint_project?: string | null;
-  key_skills: string[];
-  is_completed: boolean;
-  completed_at?: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-// ----------------------------------------------------------------------------
-// 9. Frontend View Models & UI State Helpers
-// ----------------------------------------------------------------------------
-
 export interface User {
   id: string;
   name: string;
@@ -320,55 +228,6 @@ export interface User {
   role: UserRole;
   avatarUrl?: string;
   specialization?: string[];
-}
-
-export interface Doubt {
-  id: string;
-  title: string;
-  description: string;
-  audioUrl?: string;
-  audio_url?: string;
-  studentId: string;
-  student_id?: string;
-  studentName?: string;
-  createdAt: string;
-  created_at?: string;
-  status: DoubtStatus;
-  category: string;
-  matchedMentors?: string[];
-  matched_mentor_ids?: string[];
-  similarityScore?: number;
-  tags?: string[];
-  transcript?: string;
-  urgency?: UrgencyLevel | string;
-  answer?: string;
-  answeredBy?: string;
-  answered_by_name?: string;
-  answeredAt?: string;
-  answered_at?: string;
-}
-
-export interface RoadmapMilestone {
-  id: string | number;
-  title: string;
-  description: string;
-  category?: string;
-  estimatedHours?: number;
-  estimated_hours?: number;
-  completed?: boolean;
-  is_completed?: boolean;
-  resources?: Array<string | ResourceItem | Record<string, unknown>>;
-  subtasks?: string[];
-  key_skills?: string[];
-  checkpoint_project?: string;
-}
-
-export interface SystemMetrics {
-  totalQueries: number;
-  activeStudents: number;
-  activeMentors: number;
-  avgResolutionTimeMin: number;
-  resolutionHistory: { time: string; avgMinutes: number; count: number }[];
-  categoryBreakdown: { name: string; value: number }[];
-  systemUptime: string;
+  assignedStudentIds?: string[];
+  assignedMentorId?: string;
 }

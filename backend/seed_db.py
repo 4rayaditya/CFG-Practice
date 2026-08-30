@@ -72,48 +72,48 @@ CATEGORIES = [
 MENTOR_TEMPLATES = [
     {
         "name": "Dr. Sarah Jenkins",
-        "email": "sarah.jenkins@mentormatch.dev",
-        "headline": "Staff Distributed Systems Engineer @ TechCorp",
-        "bio": "12+ years building high-throughput microservices in Go & Python. Passionate about teaching algorithms and system design.",
-        "tags": ["Distributed Systems", "Algorithms", "Python", "Go", "System Design"],
-        "rating": 5.00,
+        "email": "sarah.jenkins@shiftingorbits.org",
+        "headline": "Staff Fullstack Architect & Cradle-to-College Tech Lead",
+        "bio": "12+ years building accessible software. Volunteer mentor for underrepresented youth in tech across secondary and college levels.",
+        "tags": ["Web Dev", "React", "TypeScript", "Accessibility", "Career Strategy"],
+        "rating": 4.98,
         "resolved_count": 48
     },
     {
-        "name": "Alex Rivera",
-        "email": "alex.rivera@mentormatch.dev",
-        "headline": "Lead Frontend Architect & Open Source Contributor",
-        "bio": "Specializes in React, Next.js, Web Accessibility (a11y), and PWA offline architectures. Mentor for underrepresented youth in STEM.",
-        "tags": ["React", "TypeScript", "Frontend", "Web Dev", "Accessibility"],
-        "rating": 4.95,
-        "resolved_count": 36
-    },
-    {
-        "name": "Elena Rostova",
-        "email": "elena.rostova@mentormatch.dev",
-        "headline": "Senior AI / Machine Learning Researcher",
-        "bio": "Focuses on NLP, LLM fine-tuning, embeddings, and vector databases with PyTorch and pgvector. Former CS instructor.",
-        "tags": ["AI & Machine Learning", "PyTorch", "NLP", "Python", "Embeddings"],
+        "name": "Priya Sharma",
+        "email": "priya.sharma@shiftingorbits.org",
+        "headline": "AI/ML Systems Researcher & STEM Education Mentor",
+        "bio": "Passionate about nurturing first-generation college students in STEM, Applied Python, and Data Science careers.",
+        "tags": ["Python", "AI/ML", "Data Science", "Algorithms", "College Prep"],
         "rating": 5.00,
-        "resolved_count": 29
+        "resolved_count": 54
     },
     {
         "name": "Marcus Chen",
-        "email": "marcus.chen@mentormatch.dev",
-        "headline": "Principal Cloud Infrastructure Architect",
-        "bio": "DevOps & Cloud Database enthusiast. Expertise in PostgreSQL query optimization, Docker, Kubernetes, and Supabase.",
-        "tags": ["Database Systems", "PostgreSQL", "Cloud", "DevOps", "Docker"],
-        "rating": 4.88,
+        "email": "marcus.chen@shiftingorbits.org",
+        "headline": "Cloud Infrastructure Architect & Systems Coach",
+        "bio": "Specializes in DevOps, PostgreSQL, and Linux foundations. Dedicated mentor for youth vocational programs.",
+        "tags": ["Cloud", "Linux", "PostgreSQL", "DevOps", "System Design"],
+        "rating": 4.85,
         "resolved_count": 25
     },
     {
-        "name": "Priya Patel",
-        "email": "priya.patel@mentormatch.dev",
-        "headline": "Engineering Manager & Tech Career Coach",
-        "bio": "Helps first-generation college students master behavioral questions, resume reviews, and internship strategy.",
-        "tags": ["Career & Technical Interviews", "Resume Review", "Internships", "Mentorship"],
-        "rating": 4.98,
-        "resolved_count": 42
+        "name": "Elena Rostova",
+        "email": "elena.rostova@shiftingorbits.org",
+        "headline": "Senior Math & Algorithms Educator",
+        "bio": "Coaches students preparing for secondary board exams and college entrance aptitude competitions.",
+        "tags": ["Mathematics", "Algorithms", "Logic", "Data Structures", "Exam Prep"],
+        "rating": 4.90,
+        "resolved_count": 31
+    },
+    {
+        "name": "Alex Rivera",
+        "email": "alex.rivera@shiftingorbits.org",
+        "headline": "Field Counselor & Vocational Pathways Lead",
+        "bio": "Focuses on student career counseling, parental engagement, and high school to college transitions.",
+        "tags": ["Career Counseling", "Vocational Training", "College Admissions", "Soft Skills"],
+        "rating": 4.92,
+        "resolved_count": 38
     }
 ]
 
@@ -222,43 +222,44 @@ def generate_mock_384d_embedding(seed_str: str = "") -> List[float]:
 # Seed Data Builders
 # -----------------------------------------------------------------------------
 
-def generate_students(count: int = 10) -> List[Dict[str, Any]]:
-    """Generates realistic student profiles and student records."""
-    education_levels = [
-        "High School Junior", "High School Senior", 
-        "First-Year Undergrad", "Sophomore CS Major", 
-        "Self-Taught Career Switcher", "Bootcamp Graduate"
-    ]
-    
-    interests_pool = [
-        "Web Development", "Python", "Data Structures", 
-        "AI/ML", "Mobile Apps", "Cloud Computing", "Cybersecurity"
-    ]
+STUDENT_TEMPLATES = [
+    {"name": "Rahul Kumar", "email": "rahul.k@student.shiftingorbits.org", "stage": "Grade 10 (Secondary Boards)", "interests": ["Web Development", "Mathematics", "Robotics"]},
+    {"name": "Ananya Patel", "email": "ananya.p@student.shiftingorbits.org", "stage": "Grade 12 (College Prep & Boards)", "interests": ["Biology", "Python", "Biostatistics"]},
+    {"name": "Amit Verma", "email": "amit.v@student.shiftingorbits.org", "stage": "Grade 9 (Early High School)", "interests": ["Computer Hardware", "Networking Basics", "General Science"]},
+    {"name": "Sneha Roy", "email": "sneha.r@student.shiftingorbits.org", "stage": "College 1st Year (Freshman)", "interests": ["PyTorch", "Linear Algebra", "Computer Vision"]},
+    {"name": "Vikram Singh", "email": "vikram.s@student.shiftingorbits.org", "stage": "Grade 11 (Senior Secondary)", "interests": ["Data Analysis", "Calculus", "Python"]},
+    {"name": "Pooja Nair", "email": "pooja.n@student.shiftingorbits.org", "stage": "Grade 10 (Secondary Boards)", "interests": ["JavaScript", "Science", "English Communication"]},
+    {"name": "Deepa Mehta", "email": "deepa.m@student.shiftingorbits.org", "stage": "Grade 12 (College Prep & Boards)", "interests": ["Cybersecurity", "Linux", "Computer Networks"]},
+    {"name": "Rohit Gupta", "email": "rohit.g@student.shiftingorbits.org", "stage": "Grade 11 (Senior Secondary)", "interests": ["Docker", "AWS Basics", "Physics"]},
+    {"name": "Kavita Joshi", "email": "kavita.j@student.shiftingorbits.org", "stage": "Grade 8 (Middle School)", "interests": ["Environmental Science", "Mathematics", "Scratch Coding"]},
+    {"name": "Tarun Sharma", "email": "tarun.s@student.shiftingorbits.org", "stage": "College 2nd Year (Undergraduate)", "interests": ["Dynamic Programming", "Graph Theory", "C++ STL"]},
+    {"name": "Ritu Desai", "email": "ritu.d@student.shiftingorbits.org", "stage": "Grade 12 (College Prep & Boards)", "interests": ["Coordinate Geometry", "Calculus", "Physics Mechanics"]},
+    {"name": "Sameer Khan", "email": "sameer.k@student.shiftingorbits.org", "stage": "Grade 10 (Secondary Boards)", "interests": ["SQL Basics", "Information Technology", "Science"]},
+    {"name": "Sunita Devi", "email": "sunita.d@student.shiftingorbits.org", "stage": "Grade 11 (Senior Secondary)", "interests": ["Anatomy", "Physiology", "First Aid"]},
+    {"name": "Manoj Yadav", "email": "manoj.y@student.shiftingorbits.org", "stage": "Grade 9 (Early High School)", "interests": ["Digital Media", "English", "Graphic Design"]},
+    {"name": "Divya Rani", "email": "divya.r@student.shiftingorbits.org", "stage": "College 1st Year (Freshman)", "interests": ["Financial Accounting", "Excel Modeling", "Economics"]},
+]
 
+def generate_students(count: int = 15) -> List[Dict[str, Any]]:
+    """Generates 15 realistic student profiles and student records."""
     students = []
-    for i in range(count):
+    for i, t in enumerate(STUDENT_TEMPLATES[:count]):
         student_id = str(uuid.uuid4())
-        name = fake.name() if fake else f"Student Learner {i + 1}"
-        email = (
-            fake.email() if fake 
-            else f"student_{i + 1}_{int(datetime.now().timestamp())}@community.edu"
-        )
-        
         students.append({
             "id": student_id,
             "profile": {
                 "id": student_id,
-                "email": email,
-                "full_name": name,
-                "avatar_url": f"https://api.dicebear.com/7.x/bottts/svg?seed={student_id[:8]}",
+                "email": t["email"],
+                "full_name": t["name"],
+                "avatar_url": f"https://api.dicebear.com/7.x/bottts/svg?seed={t['name'].replace(' ', '_')}",
                 "role": "student",
                 "created_at": (datetime.now(timezone.utc) - timedelta(days=random.randint(5, 60))).isoformat(),
             },
             "student_record": {
                 "id": student_id,
-                "education_level": random.choice(education_levels),
-                "learning_goals": f"Master fundamental programming and prepare for technical internships in software engineering.",
-                "learning_interests": random.sample(interests_pool, k=random.randint(2, 4)),
+                "education_level": t["stage"],
+                "learning_goals": f"Achieve mastery in {t['stage']} curriculum and excel in cradle-to-college milestones.",
+                "learning_interests": t["interests"],
             }
         })
     return students

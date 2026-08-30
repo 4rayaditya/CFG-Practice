@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { User, UserRole } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { Session, AuthChangeEvent } from '@supabase/supabase-js';
+import { INITIAL_MENTORS, INITIAL_STUDENTS } from '../data/mockData';
 
 export interface AuthContextType {
   user: User | null;
@@ -16,7 +17,7 @@ export interface AuthContextType {
   getDashboardPath: (role?: UserRole) => string;
   signInWithSupabase: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signUpWithSupabase: (email: string, password: string, fullName: string, role: UserRole) => Promise<{ success: boolean; error?: string }>;
-  loginAsDemoUser: (role: UserRole) => void;
+  loginAsDemoUser: (role: UserRole, email?: string) => void;
 }
 
 export const getDashboardPath = (role?: UserRole): string => {
@@ -54,31 +55,73 @@ export const decodeRoleFromJwt = (token: string | null): UserRole => {
   }
 };
 
-export const mockUsers: Record<UserRole, User> = {
-  student: {
-    id: '00000000-0000-0000-0000-000000000001',
-    name: 'Alex Chen',
-    fullName: 'Alex Chen',
-    email: 'alex.chen@student.edu',
-    role: 'student',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-  },
-  mentor: {
-    id: '00000000-0000-0000-0000-000000000002',
-    name: 'Dr. Sarah Jenkins',
-    fullName: 'Dr. Sarah Jenkins',
-    email: 'sarah.j@techmentor.org',
-    role: 'mentor',
-    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-    specialization: ['Computer Science', 'Web & UI Accessibility', 'Algorithms'],
-  },
+export const mockUsers: Record<string, User> = {
   admin: {
-    id: '00000000-0000-0000-0000-000000000003',
+    id: '00000000-0000-0000-0000-000000000000',
     name: 'Program Director',
     fullName: 'Program Director',
-    email: 'director@mentormatch.org',
+    email: 'director@shiftingorbits.org',
     role: 'admin',
     avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+  },
+  'sarah.jenkins@shiftingorbits.org': {
+    id: '00000000-0000-0000-0000-000000000001',
+    name: 'Dr. Sarah Jenkins',
+    fullName: 'Dr. Sarah Jenkins',
+    email: 'sarah.jenkins@shiftingorbits.org',
+    role: 'mentor',
+    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+    specialization: ['Web Dev', 'React', 'Accessibility'],
+    assignedStudentIds: ['stu-001', 'stu-002', 'stu-003'],
+  },
+  'priya.sharma@shiftingorbits.org': {
+    id: '00000000-0000-0000-0000-000000000002',
+    name: 'Priya Sharma',
+    fullName: 'Priya Sharma',
+    email: 'priya.sharma@shiftingorbits.org',
+    role: 'mentor',
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    specialization: ['Python', 'AI/ML', 'Data Science'],
+    assignedStudentIds: ['stu-004', 'stu-005', 'stu-006'],
+  },
+  'marcus.chen@shiftingorbits.org': {
+    id: '00000000-0000-0000-0000-000000000003',
+    name: 'Marcus Chen',
+    fullName: 'Marcus Chen',
+    email: 'marcus.chen@shiftingorbits.org',
+    role: 'mentor',
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    specialization: ['Cloud', 'PostgreSQL', 'DevOps'],
+    assignedStudentIds: ['stu-007', 'stu-008', 'stu-009'],
+  },
+  'elena.rostova@shiftingorbits.org': {
+    id: '00000000-0000-0000-0000-000000000004',
+    name: 'Elena Rostova',
+    fullName: 'Elena Rostova',
+    email: 'elena.rostova@shiftingorbits.org',
+    role: 'mentor',
+    avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
+    specialization: ['Mathematics', 'Algorithms'],
+    assignedStudentIds: ['stu-010', 'stu-011', 'stu-012'],
+  },
+  'alex.rivera@shiftingorbits.org': {
+    id: '00000000-0000-0000-0000-000000000005',
+    name: 'Alex Rivera',
+    fullName: 'Alex Rivera',
+    email: 'alex.rivera@shiftingorbits.org',
+    role: 'mentor',
+    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+    specialization: ['Career Counseling', 'Vocational Prep'],
+    assignedStudentIds: ['stu-013', 'stu-014', 'stu-015'],
+  },
+  student: {
+    id: 'stu-001',
+    name: 'Rahul Kumar',
+    fullName: 'Rahul Kumar',
+    email: 'rahul.k@student.shiftingorbits.org',
+    role: 'student',
+    avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
+    assignedMentorId: '00000000-0000-0000-0000-000000000001',
   },
 };
 
@@ -92,7 +135,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('mm_auth_token'));
   
-  // Initialize user as null by default unless a saved logged-in session exists
   const [user, setUser] = useState<User | null>(() => {
     const savedUser = localStorage.getItem('mm_user_data');
     if (savedUser) {
@@ -101,11 +143,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch {
         return null;
       }
-    }
-    const savedToken = localStorage.getItem('mm_auth_token');
-    const savedRole = localStorage.getItem('mm_user_role') as UserRole;
-    if (savedToken && savedRole && mockUsers[savedRole]) {
-      return mockUsers[savedRole];
     }
     return null;
   });
@@ -141,264 +178,179 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setCurrentRole(metaRole);
           localStorage.setItem('mm_user_role', metaRole);
           localStorage.setItem('mm_user_data', JSON.stringify(loggedInUser));
-        } else {
-          // If no Supabase session and no explicit demo session saved, remain logged out
-          const savedToken = localStorage.getItem('mm_auth_token');
-          if (!savedToken) {
-            setUser(null);
-          }
         }
         setIsLoading(false);
       }).catch(() => {
         if (mounted) setIsLoading(false);
       });
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
-        if (!mounted) return;
-        setSession(session);
-        if (session) {
-          setToken(session.access_token);
-          localStorage.setItem('mm_auth_token', session.access_token);
-          
-          const metaRole = sanitizeRole(
-            session.user.user_metadata?.role || 
-            session.user.app_metadata?.role || 
-            decodeRoleFromJwt(session.access_token)
-          );
+      const { data: authListener } = supabase.auth.onAuthStateChange(
+        async (event: AuthChangeEvent, currentSession: Session | null) => {
+          if (!mounted) return;
+          setSession(currentSession);
+          if (currentSession) {
+            setToken(currentSession.access_token);
+            localStorage.setItem('mm_auth_token', currentSession.access_token);
+            
+            const metaRole = sanitizeRole(
+              currentSession.user.user_metadata?.role || 
+              currentSession.user.app_metadata?.role || 
+              decodeRoleFromJwt(currentSession.access_token)
+            );
 
-          const loggedInUser: User = {
-            id: session.user.id,
-            name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
-            fullName: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
-            email: session.user.email || '',
-            role: metaRole,
-          };
-          setUser(loggedInUser);
-          setCurrentRole(metaRole);
-          localStorage.setItem('mm_user_role', metaRole);
-          localStorage.setItem('mm_user_data', JSON.stringify(loggedInUser));
-        } else {
-          const savedToken = localStorage.getItem('mm_auth_token');
-          if (!savedToken) {
-            setToken(null);
-            setUser(null);
-            localStorage.removeItem('mm_auth_token');
-            localStorage.removeItem('mm_user_data');
+            const loggedInUser: User = {
+              id: currentSession.user.id,
+              name: currentSession.user.user_metadata?.full_name || currentSession.user.email?.split('@')[0] || 'User',
+              fullName: currentSession.user.user_metadata?.full_name || currentSession.user.email?.split('@')[0] || 'User',
+              email: currentSession.user.email || '',
+              role: metaRole,
+            };
+            setUser(loggedInUser);
+            setCurrentRole(metaRole);
+            localStorage.setItem('mm_user_role', metaRole);
+            localStorage.setItem('mm_user_data', JSON.stringify(loggedInUser));
           }
+          setIsLoading(false);
         }
-        setIsLoading(false);
-      });
+      );
 
       return () => {
         mounted = false;
-        subscription.unsubscribe();
+        authListener?.subscription.unsubscribe();
       };
     } else {
       setIsLoading(false);
     }
   }, []);
 
-  const login = (role: UserRole = 'student', customUser?: Partial<User>) => {
-    const validRole = sanitizeRole(role);
-    const targetUser: User = {
-      ...(mockUsers[validRole] || mockUsers.student),
-      ...customUser,
-      role: validRole,
-    };
-    setCurrentRole(validRole);
-    setUser(targetUser);
-    setToken(`demo-token-${validRole}-${Date.now()}`);
-    localStorage.setItem('mm_auth_token', `demo-token-${validRole}`);
-    localStorage.setItem('mm_user_role', validRole);
-    localStorage.setItem('mm_user_data', JSON.stringify(targetUser));
+  const loginAsDemoUser = (role: UserRole, email?: string) => {
+    let demoUser: User;
+    if (email && mockUsers[email]) {
+      demoUser = mockUsers[email];
+    } else if (role === 'admin') {
+      demoUser = mockUsers.admin;
+    } else if (role === 'mentor') {
+      demoUser = mockUsers['sarah.jenkins@shiftingorbits.org'];
+    } else {
+      demoUser = mockUsers.student;
+    }
+
+    setUser(demoUser);
+    setCurrentRole(demoUser.role);
+    setToken('mock-jwt-token-demo');
+    localStorage.setItem('mm_auth_token', 'mock-jwt-token-demo');
+    localStorage.setItem('mm_user_role', demoUser.role);
+    localStorage.setItem('mm_user_data', JSON.stringify(demoUser));
   };
 
-  const loginAsDemoUser = (role: UserRole) => {
-    login(role);
+  const login = (role?: UserRole, customUser?: Partial<User>) => {
+    const targetRole = role || currentRole || 'student';
+    let baseUser = targetRole === 'admin' ? mockUsers.admin : targetRole === 'mentor' ? mockUsers['sarah.jenkins@shiftingorbits.org'] : mockUsers.student;
+    const finalUser: User = { ...baseUser, ...customUser, role: targetRole };
+    
+    setUser(finalUser);
+    setCurrentRole(targetRole);
+    setToken('mock-jwt-token-custom');
+    localStorage.setItem('mm_auth_token', 'mock-jwt-token-custom');
+    localStorage.setItem('mm_user_role', targetRole);
+    localStorage.setItem('mm_user_data', JSON.stringify(finalUser));
   };
 
   const logout = async () => {
     try {
-      if (isSupabaseConfigured && session) {
+      if (isSupabaseConfigured) {
         await supabase.auth.signOut();
       }
-    } catch (e) {
-      console.warn('Sign out notice:', e);
+    } catch (err) {
+      console.warn('Supabase sign out error:', err);
+    } finally {
+      setUser(null);
+      setSession(null);
+      setToken(null);
+      localStorage.removeItem('mm_auth_token');
+      localStorage.removeItem('mm_user_role');
+      localStorage.removeItem('mm_user_data');
     }
-    setUser(null);
-    setSession(null);
-    setToken(null);
-    localStorage.removeItem('mm_auth_token');
-    localStorage.removeItem('mm_user_data');
-    localStorage.removeItem('mm_user_role');
   };
 
-  const setRole = (role: UserRole) => {
-    const validRole = sanitizeRole(role);
-    setCurrentRole(validRole);
-    localStorage.setItem('mm_user_role', validRole);
+  const setRole = (newRole: UserRole) => {
+    setCurrentRole(newRole);
     if (user) {
-      const updatedUser = { ...user, role: validRole };
+      const updatedUser = { ...user, role: newRole };
       setUser(updatedUser);
+      localStorage.setItem('mm_user_role', newRole);
       localStorage.setItem('mm_user_data', JSON.stringify(updatedUser));
     }
   };
 
-  const signInWithSupabase = async (email: string, password: string) => {
-    setIsLoading(true);
-    const cleanEmail = email.trim().toLowerCase();
-
-    // Check demo credentials fallback
-    const isDemoStudent = cleanEmail === 'alex.chen@student.edu' && (password === 'StudentPass2026!' || password === 'MentorMatch2026!');
-    const isDemoMentor = cleanEmail === 'sarah.j@techmentor.org' && (password === 'MentorPass2026!' || password === 'MentorMatch2026!');
-    const isDemoAdmin = cleanEmail === 'director@mentormatch.org' && (password === 'DirectorPass2026!' || password === 'MentorMatch2026!');
+  const signInWithSupabase = async (email: string, pass: string): Promise<{ success: boolean; error?: string }> => {
+    // Check if matching any of our mock demo users for instant local login
+    if (mockUsers[email]) {
+      const matched = mockUsers[email];
+      setUser(matched);
+      setCurrentRole(matched.role);
+      localStorage.setItem('mm_auth_token', 'mock-token-' + matched.id);
+      localStorage.setItem('mm_user_role', matched.role);
+      localStorage.setItem('mm_user_data', JSON.stringify(matched));
+      return { success: true };
+    }
 
     if (!isSupabaseConfigured) {
-      if (isDemoStudent) {
-        login('student');
-        setIsLoading(false);
-        return { success: true };
-      } else if (isDemoMentor) {
-        login('mentor');
-        setIsLoading(false);
-        return { success: true };
-      } else if (isDemoAdmin) {
-        login('admin');
-        setIsLoading(false);
-        return { success: true };
-      } else if (cleanEmail && password.length >= 6) {
-        // Accept valid custom credentials in offline mode
-        login('student', { email: cleanEmail, name: cleanEmail.split('@')[0], fullName: cleanEmail.split('@')[0] });
-        setIsLoading(false);
-        return { success: true };
-      } else {
-        setIsLoading(false);
-        return { success: false, error: 'Invalid email or password.' };
-      }
+      // Fallback demo user
+      loginAsDemoUser('student');
+      return { success: true };
     }
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
-      if (error) {
-        // If remote Supabase user doesn't exist yet, check demo account credentials
-        if (isDemoStudent) {
-          login('student');
-          setIsLoading(false);
-          return { success: true };
-        } else if (isDemoMentor) {
-          login('mentor');
-          setIsLoading(false);
-          return { success: true };
-        } else if (isDemoAdmin) {
-          login('admin');
-          setIsLoading(false);
-          return { success: true };
-        }
-        setIsLoading(false);
-        return { success: false, error: error.message || 'Invalid credentials.' };
-      }
-
-      if (data.session) {
-        setSession(data.session);
-        setToken(data.session.access_token);
-        localStorage.setItem('mm_auth_token', data.session.access_token);
-        
-        const metaRole = sanitizeRole(
-          data.user.user_metadata?.role || 
-          data.user.app_metadata?.role || 
-          decodeRoleFromJwt(data.session.access_token)
-        );
-
-        const loggedUser: User = {
-          id: data.user.id,
-          name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'User',
-          fullName: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'User',
-          email: data.user.email || '',
-          role: metaRole,
-        };
-
-        setUser(loggedUser);
-        setCurrentRole(metaRole);
-        localStorage.setItem('mm_user_role', metaRole);
-        localStorage.setItem('mm_user_data', JSON.stringify(loggedUser));
-      }
-      setIsLoading(false);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password: pass,
+      });
+      if (error) return { success: false, error: error.message };
+      if (!data.session) return { success: false, error: 'No active session returned.' };
       return { success: true };
     } catch (err: any) {
-      if (isDemoStudent) {
-        login('student');
-        setIsLoading(false);
-        return { success: true };
-      } else if (isDemoMentor) {
-        login('mentor');
-        setIsLoading(false);
-        return { success: true };
-      } else if (isDemoAdmin) {
-        login('admin');
-        setIsLoading(false);
-        return { success: true };
-      }
-      setIsLoading(false);
-      return { success: false, error: err.message || 'Login failed' };
+      return { success: false, error: err.message || 'Authentication failed' };
     }
   };
 
-  const signUpWithSupabase = async (email: string, password: string, fullName: string, role: UserRole) => {
-    setIsLoading(true);
-    const dbRole = sanitizeRole(role);
-    const cleanEmail = email.trim().toLowerCase();
-
+  const signUpWithSupabase = async (
+    email: string,
+    pass: string,
+    fullName: string,
+    role: UserRole
+  ): Promise<{ success: boolean; error?: string }> => {
     if (!isSupabaseConfigured) {
-      login(dbRole, { email: cleanEmail, name: fullName, fullName });
-      setIsLoading(false);
+      const newUser: User = {
+        id: `user-${Date.now()}`,
+        name: fullName,
+        fullName,
+        email,
+        role,
+      };
+      setUser(newUser);
+      setCurrentRole(role);
+      localStorage.setItem('mm_auth_token', 'mock-token-' + newUser.id);
+      localStorage.setItem('mm_user_role', role);
+      localStorage.setItem('mm_user_data', JSON.stringify(newUser));
       return { success: true };
     }
 
     try {
       const { data, error } = await supabase.auth.signUp({
-        email: cleanEmail,
-        password,
+        email,
+        password: pass,
         options: {
           data: {
             full_name: fullName,
-            role: dbRole,
+            role,
           },
         },
       });
-      if (error) {
-        // If remote signup encounters issue (e.g., email confirmation rate limit), permit instant local session
-        console.warn('Supabase signup notice, falling back to instant login:', error.message);
-        login(dbRole, { email: cleanEmail, name: fullName, fullName });
-        setIsLoading(false);
-        return { success: true };
-      }
-      if (data.session) {
-        setSession(data.session);
-        setToken(data.session.access_token);
-        localStorage.setItem('mm_auth_token', data.session.access_token);
-        
-        const loggedUser: User = {
-          id: data.session.user.id,
-          name: data.session.user.user_metadata?.full_name || fullName || 'User',
-          fullName: data.session.user.user_metadata?.full_name || fullName || 'User',
-          email: data.session.user.email || cleanEmail,
-          role: dbRole,
-        };
-
-        setUser(loggedUser);
-        setCurrentRole(dbRole);
-        localStorage.setItem('mm_user_role', dbRole);
-        localStorage.setItem('mm_user_data', JSON.stringify(loggedUser));
-      } else {
-        login(dbRole, { email: cleanEmail, name: fullName, fullName });
-      }
-      setIsLoading(false);
+      if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (err: any) {
-      console.warn('Signup exception, logging in with demo state:', err);
-      login(dbRole, { email: cleanEmail, name: fullName, fullName });
-      setIsLoading(false);
-      return { success: true };
+      return { success: false, error: err.message || 'Sign up failed' };
     }
   };
 
@@ -425,7 +377,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');

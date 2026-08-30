@@ -1,712 +1,676 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  CheckCircle2, 
-  Clock, 
-  User, 
-  Radio, 
-  Volume2, 
+  Users, 
   Sparkles, 
   Search, 
   Filter, 
-  AlertCircle, 
+  AlertTriangle, 
+  Home, 
+  Mic, 
+  Clock, 
+  CheckCircle2, 
+  Calendar, 
+  BookOpen, 
+  Award, 
+  Send, 
+  Radio, 
+  RefreshCw, 
+  MessageSquare, 
+  Heart, 
+  FileText, 
   Tag, 
-  Check, 
-  Loader2,
-  RefreshCw,
-  MessageSquare,
-  Send,
-  Code,
-  BookOpen,
-  Mic,
-  MicOff,
-  Flame,
-  ArrowUpDown,
+  ChevronRight, 
   X,
-  ExternalLink,
-  ChevronRight,
-  ShieldCheck,
-  Award
+  PhoneCall
 } from 'lucide-react';
-import { useRealtimeDoubts, saveLocalCachedDoubts, getLocalCachedDoubts } from '../../hooks/useRealtimeDoubts';
-import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
+import { useRealtimeDoubts } from '../../hooks/useRealtimeDoubts';
 import { useVoiceToText } from '../../hooks/useVoiceToText';
-import { evaluateDoubtPriority, sortDoubtsByPriority } from '../../utils/priorityEngine';
-import type { Doubt } from '../../types';
+import { 
+  getPersistedStudents, 
+  getPersistedMentors, 
+  getPersistedMentorshipRequests,
+  updateMentorshipRequestStatus 
+} from '../../data/mockData';
+import { evaluateStudentPriority, sortStudentsByPriority } from '../../utils/studentPriorityEngine';
+import { StudentDossierModal } from '../student/StudentDossierModal';
+import { OfflineVisitLogger } from './OfflineVisitLogger';
+import type { StudentDossier, Doubt, MentorshipRequest, OfflineHomeVisit } from '../../types';
 
 export const MentorBoard: React.FC = () => {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<'assigned-students' | 'visit-logger' | 'doubts' | 'requests'>('assigned-students');
   
-  // Load all doubts to manage Open and Resolved tabs seamlessly
-  const { doubts, loading, error, refetch, updateOptimisticDoubt } = useRealtimeDoubts({
+  // Data State
+  const [students, setStudents] = useState<StudentDossier[]>([]);
+  const [mentorshipRequests, setMentorshipRequests] = useState<MentorshipRequest[]>([]);
+  const [selectedStudentForDossier, setSelectedStudentForDossier] = useState<StudentDossier | null>(null);
+  const [selectedStudentForVisitLogger, setSelectedStudentForVisitLogger] = useState<StudentDossier | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState<'All' | 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'NORMAL'>('All');
+
+  // Real-time Doubts for answering
+  const { doubts, loading: doubtsLoading, refetch: refetchDoubts, updateOptimisticDoubt } = useRealtimeDoubts({
     filterStatus: 'all',
-    limit: 100,
+    limit: 50,
   });
 
-  const [activeTab, setActiveTab] = useState<'open' | 'resolved' | 'all'>('open');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [sortBy, setSortBy] = useState<'priority' | 'newest' | 'oldest'>('priority');
-
-  // Answer Modal State
+  // Doubt Answering State
   const [activeAnsweringDoubt, setActiveAnsweringDoubt] = useState<Doubt | null>(null);
   const [answerText, setAnswerText] = useState('');
-  const [codeSnippet, setCodeSnippet] = useState('');
-  const [referenceUrl, setReferenceUrl] = useState('');
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
-  const [actionErrorMsg, setActionErrorMsg] = useState<string | null>(null);
 
-  // Voice-to-Text hook for dictating answers
+  // Voice-to-Text for answering doubts
   const {
-    isListening,
-    transcript: voiceTranscript,
-    isSupported: isVoiceSupported,
-    startListening,
-    stopListening,
-    resetTranscript,
+    isListening: isVoiceAnswering,
+    transcript: voiceAnswerTranscript,
+    startListening: startVoiceAnswering,
+    stopListening: stopVoiceAnswering,
+    resetTranscript: resetVoiceAnswering,
   } = useVoiceToText();
 
-  // Sync voice transcript into answer text
-  const handleToggleVoiceDictation = () => {
-    if (isListening) {
-      stopListening();
-      if (voiceTranscript) {
-        setAnswerText((prev) => (prev ? `${prev}\n\n${voiceTranscript}` : voiceTranscript));
-        resetTranscript();
-      }
-    } else {
-      resetTranscript();
-      startListening();
-    }
+  const loadData = () => {
+    const allStudents = getPersistedStudents();
+    const mentors = getPersistedMentors();
+
+    // Identify current mentor profile
+    const currentMentorProfile = mentors.find(
+      (m) => m.email.toLowerCase() === user?.email?.toLowerCase() || m.id === user?.id
+    ) || mentors[0]; // fallback to Dr. Sarah Jenkins
+
+    // Filter STRICTLY to students assigned under this mentor (the 3 students)
+    const assigned = allStudents.filter((s) => 
+      currentMentorProfile.assignedStudentIds.includes(s.id) || s.assignedMentorId === currentMentorProfile.id
+    );
+
+    setStudents(assigned.length > 0 ? assigned : allStudents.slice(0, 3));
+
+    // Load mentorship requests for this mentor
+    const allRequests = getPersistedMentorshipRequests();
+    const assignedRequests = allRequests.filter(
+      (r) => r.mentorId === currentMentorProfile.id || r.mentorName.toLowerCase().includes(currentMentorProfile.fullName.toLowerCase())
+    );
+    setMentorshipRequests(assignedRequests.length > 0 ? assignedRequests : allRequests.slice(0, 2));
   };
 
-  // Keep answerText updated with ongoing speech if listening
-  React.useEffect(() => {
-    if (isListening && voiceTranscript) {
-      // Append interim voice transcript nicely
+  useEffect(() => {
+    loadData();
+
+    const handleDataUpdated = () => {
+      loadData();
+    };
+
+    window.addEventListener('shifting_orbits_data_updated', handleDataUpdated);
+    return () => {
+      window.removeEventListener('shifting_orbits_data_updated', handleDataUpdated);
+    };
+  }, [user]);
+
+  // Voice transcription sync for doubt answering
+  useEffect(() => {
+    if (voiceAnswerTranscript) {
+      setAnswerText((prev) => (prev ? `${prev} ${voiceAnswerTranscript}` : voiceAnswerTranscript));
+      resetVoiceAnswering();
     }
-  }, [isListening, voiceTranscript]);
+  }, [voiceAnswerTranscript, resetVoiceAnswering]);
 
-  // Extract unique categories dynamically
-  const categories = ['All', ...Array.from(new Set(doubts.map((d) => d.category).filter(Boolean)))];
-
-  // Filter doubts by tab, search, and category
-  const filteredDoubts = doubts.filter((doubt) => {
-    // Tab filter
-    if (activeTab === 'open' && doubt.status !== 'pending' && doubt.status !== 'matched') return false;
-    if (activeTab === 'resolved' && doubt.status !== 'resolved') return false;
-
-    // Category filter
-    const matchesCategory = selectedCategory === 'All' || doubt.category === selectedCategory;
-
-    // Search query
-    const searchLower = searchQuery.toLowerCase();
-    const matchesSearch =
-      !searchQuery ||
-      doubt.title.toLowerCase().includes(searchLower) ||
-      doubt.description.toLowerCase().includes(searchLower) ||
-      (doubt.transcript && doubt.transcript.toLowerCase().includes(searchLower)) ||
-      (doubt.studentName && doubt.studentName.toLowerCase().includes(searchLower)) ||
-      (doubt.tags && doubt.tags.some((t) => t.toLowerCase().includes(searchLower)));
-
-    return matchesCategory && matchesSearch;
-  });
-
-  // Sort filtered doubts
-  const sortedDoubts = [...filteredDoubts].sort((a, b) => {
-    if (sortBy === 'priority') {
-      const pA = evaluateDoubtPriority(a).score;
-      const pB = evaluateDoubtPriority(b).score;
-      return pB - pA;
-    }
-    if (sortBy === 'newest') {
-      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-    }
-    return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
-  });
-
-  const openDoubtsCount = doubts.filter((d) => d.status === 'pending' || d.status === 'matched').length;
-  const resolvedDoubtsCount = doubts.filter((d) => d.status === 'resolved').length;
-  const criticalDoubtsCount = doubts.filter(
-    (d) => (d.status === 'pending' || d.status === 'matched') && evaluateDoubtPriority(d).tier === 'CRITICAL'
-  ).length;
-
-  /**
-   * Open the answering modal for a specific doubt
-   */
   const handleOpenAnswerModal = (doubt: Doubt) => {
     setActiveAnsweringDoubt(doubt);
     setAnswerText(doubt.answer || '');
-    setCodeSnippet('');
-    setReferenceUrl('');
-    setActionErrorMsg(null);
-    resetTranscript();
+    setActionSuccessMsg(null);
+    resetVoiceAnswering();
   };
 
-  /**
-   * Submit the mentor's answer and resolve the question
-   */
   const handleSubmitAnswer = async () => {
-    if (!activeAnsweringDoubt) return;
-    if (!answerText.trim() && !codeSnippet.trim()) {
-      setActionErrorMsg('Please provide an answer explanation or code snippet.');
-      return;
-    }
+    if (!activeAnsweringDoubt || !answerText.trim()) return;
 
     setIsSubmittingAnswer(true);
-    setActionErrorMsg(null);
-
-    const fullAnswer = [
-      answerText.trim(),
-      codeSnippet.trim() ? `\n\n\`\`\`\n${codeSnippet.trim()}\n\`\`\`` : '',
-      referenceUrl.trim() ? `\n\n📌 **Recommended Reference:** [${referenceUrl.trim()}](${referenceUrl.trim()})` : '',
-    ].filter(Boolean).join('');
-
-    const mentorName = user?.fullName || user?.name || 'Dr. Sarah Jenkins (Volunteer Mentor)';
-    const answeredAt = new Date().toISOString();
-
-    const partialUpdate: Partial<Doubt> = {
-      status: 'resolved',
-      answer: fullAnswer,
-      answeredBy: mentorName,
-      answered_by_name: mentorName,
-      answeredAt: answeredAt,
-      answered_at: answeredAt,
-    };
-
     try {
-      // 1. Update Supabase
-      const { error: supaError } = await supabase
-        .from('doubts')
-        .update({
-          status: 'resolved',
-          answer: fullAnswer,
-          answered_by_name: mentorName,
-          answered_at: answeredAt,
-          updated_at: answeredAt,
-        })
-        .eq('id', activeAnsweringDoubt.id);
+      updateOptimisticDoubt(activeAnsweringDoubt.id, {
+        answer: answerText.trim(),
+        status: 'resolved',
+        answered_by_name: user?.fullName || user?.name || 'Volunteer Mentor',
+        answered_at: new Date().toISOString(),
+      });
 
-      if (supaError) {
-        console.warn('Supabase remote update notice, saving to local cache:', supaError.message);
-      }
-
-      // 2. Update local state and persistent storage
-      updateOptimisticDoubt(activeAnsweringDoubt.id, partialUpdate);
-
-      const allCached = getLocalCachedDoubts();
-      const updatedCache = allCached.map((d) => (d.id === activeAnsweringDoubt.id ? { ...d, ...partialUpdate } : d));
-      saveLocalCachedDoubts(updatedCache);
-
-      setActionSuccessMsg(`✅ Question answered & resolved successfully! Sent to ${activeAnsweringDoubt.studentName || 'student'}.`);
-      setActiveAnsweringDoubt(null);
-      setTimeout(() => setActionSuccessMsg(null), 5000);
-    } catch (err: any) {
-      console.error('Failed to submit answer:', err);
-      setActionErrorMsg(err.message || 'Failed to submit answer. Please try again.');
-    } finally {
+      setActionSuccessMsg('Answer submitted successfully and marked resolved!');
+      setTimeout(() => {
+        setActiveAnsweringDoubt(null);
+        setIsSubmittingAnswer(false);
+      }, 800);
+    } catch (err) {
       setIsSubmittingAnswer(false);
     }
   };
 
-  const formatTimeAgo = (isoString?: string) => {
-    if (!isoString) return 'Just now';
-    try {
-      const date = new Date(isoString);
-      if (isNaN(date.getTime())) return isoString;
-      const diffMs = Date.now() - date.getTime();
-      const diffMins = Math.floor(diffMs / 60000);
-      if (diffMins < 1) return 'Just now';
-      if (diffMins < 60) return `${diffMins}m ago`;
-      const diffHours = Math.floor(diffMins / 60);
-      if (diffHours < 24) return `${diffHours}h ago`;
-      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-    } catch {
-      return 'Recently';
-    }
+  const handleAcceptRequest = (requestId: string) => {
+    updateMentorshipRequestStatus(requestId, 'accepted');
+    loadData();
   };
 
+  const handleCompleteRequest = (requestId: string) => {
+    updateMentorshipRequestStatus(requestId, 'completed');
+    loadData();
+  };
+
+  // Filter assigned students
+  const filteredStudents = sortStudentsByPriority(
+    students.filter((student) => {
+      const priority = student.priorityEvaluation || evaluateStudentPriority(student);
+      const matchesPriority = priorityFilter === 'All' || priority.tier === priorityFilter;
+      const query = searchQuery.toLowerCase();
+      const matchesSearch =
+        !searchQuery ||
+        student.name.toLowerCase().includes(query) ||
+        student.cradleStage.toLowerCase().includes(query) ||
+        student.dreamCareer.toLowerCase().includes(query);
+
+      return matchesPriority && matchesSearch;
+    })
+  );
+
+  const criticalCount = students.filter(
+    (s) => (s.priorityEvaluation || evaluateStudentPriority(s)).tier === 'CRITICAL'
+  ).length;
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8">
-      {/* Header Section */}
-      <div className="max-w-7xl mx-auto mb-8 space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-800/80">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-teal-400 via-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                Mentor Q&A Resolution Hub
-              </h1>
-              {/* Realtime Live Pulse Indicator */}
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 text-xs font-medium backdrop-blur-sm">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                <Radio className="w-3.5 h-3.5" />
-                <span>Live Realtime Sync</span>
-              </div>
-            </div>
-            <p className="text-slate-400 text-sm mt-1">
-              Provide direct guidance, review transcribed doubts, and resolve roadblocks with code solutions and voice notes.
-            </p>
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+      {/* Top Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+        <div>
+          <div className="inline-flex items-center gap-2 text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md uppercase tracking-wider mb-2 border border-emerald-200">
+            <Heart className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Volunteer Mentor Board • Shifting Orbits</span>
           </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => refetch()}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 text-slate-300 hover:text-white text-xs font-semibold transition shadow-sm"
-              title="Refresh queue"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-teal-400' : ''}`} />
-              <span>Refresh</span>
-            </button>
-            <div className="px-3.5 py-2 rounded-xl bg-teal-950/40 border border-teal-500/20 text-teal-300 text-xs font-bold">
-              {openDoubtsCount} Open Pending
-            </div>
-          </div>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+            My Assigned Students & Field Portal
+          </h1>
+          <p className="text-sm text-slate-600 mt-1">
+            Holistic cradle-to-college tracking for the 3 students assigned under you. Log home visits, resolve doubts, and guide career milestones.
+          </p>
         </div>
 
-        {/* Action Success / Error Notifications */}
-        {actionSuccessMsg && (
-          <div className="p-4 rounded-2xl bg-emerald-950/70 border border-emerald-500/40 text-emerald-200 text-xs font-semibold flex items-center justify-between shadow-lg animate-in fade-in slide-in-from-top-2">
-            <div className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-              <span>{actionSuccessMsg}</span>
-            </div>
-            <button onClick={() => setActionSuccessMsg(null)} className="text-emerald-400 hover:text-emerald-200">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        {/* Critical Priority Alert Banner */}
-        {criticalDoubtsCount > 0 && activeTab === 'open' && (
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-rose-950/80 via-rose-900/40 to-slate-900 border border-rose-500/40 text-rose-200 text-xs flex items-center justify-between shadow-md">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-rose-500/20 text-rose-400">
-                <Flame className="w-5 h-5 animate-pulse text-rose-400" />
-              </div>
-              <div>
-                <span className="font-bold text-rose-100 block">
-                  {criticalDoubtsCount} Student {criticalDoubtsCount === 1 ? 'Question Requires' : 'Questions Require'} Urgent Attention
-                </span>
-                <span className="text-[11px] text-rose-300/80">
-                  Identified by the Rule-Based Priority Engine (SLA wait time & blocking roadblocks)
-                </span>
-              </div>
-            </div>
-            <button
-              onClick={() => { setSortBy('priority'); }}
-              className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-sm transition"
-            >
-              View Critical First
-            </button>
-          </div>
-        )}
-
-        {/* Queue Navigation Tabs */}
-        <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
-          <div className="flex items-center bg-slate-900 p-1.5 rounded-2xl border border-slate-800">
-            <button
-              type="button"
-              onClick={() => setActiveTab('open')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-                activeTab === 'open'
-                  ? 'bg-teal-500 text-slate-950 shadow-md shadow-teal-500/20'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Open Questions ({openDoubtsCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('resolved')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-                activeTab === 'resolved'
-                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Resolved & Answers ({resolvedDoubtsCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('all')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-                activeTab === 'all'
-                  ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              All Questions ({doubts.length})
-            </button>
-          </div>
-
-          {/* Sort Selector */}
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <ArrowUpDown className="w-3.5 h-3.5 text-slate-500" />
-            <span>Sort by:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="bg-slate-900 border border-slate-800 text-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-teal-500"
-            >
-              <option value="priority">Rule Priority (Critical First)</option>
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest / SLA Wait Time</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Filters and Search Bar */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="relative w-full md:w-96">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search doubts by keyword, tag, or student..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-800 focus:border-teal-500/50 focus:ring-2 focus:ring-teal-500/20 text-slate-200 placeholder-slate-500 text-xs transition outline-none"
-            />
-          </div>
-
-          {/* Category Filter Pills */}
-          <div className="w-full md:w-auto flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
-            <Filter className="w-3.5 h-3.5 text-slate-500 shrink-0 mr-1" />
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${
-                  selectedCategory === cat
-                    ? 'bg-teal-500 text-slate-950 font-bold shadow-md shadow-teal-500/20'
-                    : 'bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Action Button: Log Offline Home Visit */}
+        <button
+          type="button"
+          id="btn-open-visit-logger-tab"
+          onClick={() => setActiveTab('visit-logger')}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-md shadow-emerald-600/20 transition hover:scale-[1.02] active:scale-98 self-start md:self-auto"
+        >
+          <Mic className="w-4 h-4" />
+          <span>Speech-to-Text Home Visit Logger</span>
+        </button>
       </div>
 
-      {/* Main Content: Masonry / Responsive Grid */}
-      <div className="max-w-7xl mx-auto">
-        {/* Loading Skeletons */}
-        {loading && doubts.length === 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((idx) => (
-              <div
-                key={idx}
-                className="h-64 rounded-3xl bg-slate-900/40 border border-slate-800/60 p-6 animate-pulse flex flex-col justify-between"
-              >
-                <div className="space-y-3">
-                  <div className="h-4 bg-slate-800 rounded w-1/3" />
-                  <div className="h-6 bg-slate-800 rounded w-4/5" />
-                  <div className="h-16 bg-slate-800/60 rounded w-full" />
-                </div>
-                <div className="h-10 bg-slate-800 rounded w-full" />
-              </div>
-            ))}
-          </div>
-        )}
+      {/* Navigation Tabs */}
+      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-1">
+        <button
+          type="button"
+          id="tab-assigned-students"
+          onClick={() => setActiveTab('assigned-students')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition ${
+            activeTab === 'assigned-students'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          <span>My Assigned Students ({students.length})</span>
+          {criticalCount > 0 && (
+            <span className="px-1.5 py-0.2 bg-rose-500 text-white text-[10px] rounded-full font-black animate-pulse">
+              {criticalCount} Critical
+            </span>
+          )}
+        </button>
 
-        {/* Empty State */}
-        {!loading && sortedDoubts.length === 0 && (
-          <div className="text-center py-20 bg-slate-900/20 rounded-3xl border border-dashed border-slate-800 p-8 space-y-3">
-            <div className="w-16 h-16 rounded-2xl bg-teal-950/60 border border-teal-500/20 text-teal-400 flex items-center justify-center mx-auto mb-2">
-              <CheckCircle2 className="w-8 h-8 text-teal-400" />
+        <button
+          type="button"
+          id="tab-visit-logger"
+          onClick={() => setActiveTab('visit-logger')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition ${
+            activeTab === 'visit-logger'
+              ? 'bg-emerald-600 text-white shadow-xs'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+          }`}
+        >
+          <Mic className="w-4 h-4" />
+          <span>Offline Field Visit Voice Logger</span>
+        </button>
+
+        <button
+          type="button"
+          id="tab-doubts"
+          onClick={() => setActiveTab('doubts')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition ${
+            activeTab === 'doubts'
+              ? 'bg-sky-600 text-white shadow-xs'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+          }`}
+        >
+          <MessageSquare className="w-4 h-4" />
+          <span>Student Doubts Queue</span>
+        </button>
+
+        <button
+          type="button"
+          id="tab-requests"
+          onClick={() => setActiveTab('requests')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition ${
+            activeTab === 'requests'
+              ? 'bg-purple-600 text-white shadow-xs'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+          }`}
+        >
+          <Calendar className="w-4 h-4" />
+          <span>1-on-1 Guidance Requests ({mentorshipRequests.length})</span>
+        </button>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* TAB 1: MY ASSIGNED STUDENTS (3 Students) */}
+      {/* ========================================================================= */}
+      {activeTab === 'assigned-students' && (
+        <div className="space-y-6 animate-in fade-in duration-150">
+          {/* Filter Bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
+            <div className="relative w-full sm:w-72">
+              <input
+                type="text"
+                placeholder="Search assigned students..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-emerald-500"
+              />
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
             </div>
-            <h3 className="text-xl font-bold text-slate-200">
-              {activeTab === 'open' ? 'Queue Cleared! All Caught Up' : 'No Questions Found'}
-            </h3>
-            <p className="text-slate-400 text-xs max-w-md mx-auto">
-              {activeTab === 'open'
-                ? 'There are currently no open doubts matching your filter. New voice intakes will appear here automatically in real-time.'
-                : 'No doubts found matching the current search parameters.'}
-            </p>
-          </div>
-        )}
 
-        {/* Responsive Grid of Doubt Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
-          {sortedDoubts.map((doubt) => {
-            const priorityEval = evaluateDoubtPriority(doubt);
-            const isResolved = doubt.status === 'resolved';
-            const tags = doubt.tags && doubt.tags.length > 0 ? doubt.tags : [doubt.category];
-
-            return (
-              <div
-                key={doubt.id}
-                className={`group relative flex flex-col justify-between rounded-3xl bg-gradient-to-b from-slate-900/90 to-slate-900/50 hover:from-slate-900 hover:to-slate-850 border transition-all duration-300 p-6 backdrop-blur-sm ${
-                  isResolved
-                    ? 'border-emerald-500/30 shadow-sm'
-                    : priorityEval.tier === 'CRITICAL'
-                    ? 'border-rose-500/50 shadow-lg shadow-rose-950/30'
-                    : 'border-slate-800/80 hover:border-teal-500/40 hover:shadow-xl hover:shadow-teal-950/20'
-                }`}
-              >
-                <div>
-                  {/* Top Row: Category & Priority Tier Badge */}
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-semibold uppercase tracking-wider">
-                      <Sparkles className="w-3 h-3" />
-                      {doubt.category}
-                    </span>
-
-                    {/* Priority Engine Badge */}
-                    <div
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-mono font-bold ${priorityEval.badgeColor}`}
-                      title={priorityEval.triggeredRules.join(' • ')}
-                    >
-                      {priorityEval.tier === 'CRITICAL' && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping" />
-                      )}
-                      <span>{priorityEval.tier}</span>
-                    </div>
-                  </div>
-
-                  {/* Doubt Title */}
-                  <h3 className="text-base font-bold text-slate-100 group-hover:text-teal-300 transition-colors leading-snug">
-                    {doubt.title}
-                  </h3>
-
-                  {/* Transcribed Description / Spoken Query */}
-                  <div className="mt-3 relative">
-                    <p className="text-xs text-slate-300/90 leading-relaxed line-clamp-3 bg-slate-950/40 p-3 rounded-xl border border-slate-800/50">
-                      {doubt.transcript ? (
-                        <span className="italic text-slate-200">&ldquo;{doubt.transcript}&rdquo;</span>
-                      ) : (
-                        doubt.description
-                      )}
-                    </p>
-                  </div>
-
-                  {/* Answer Preview if already answered */}
-                  {isResolved && doubt.answer && (
-                    <div className="mt-3 p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/20 space-y-1">
-                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-400">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Answered by {doubt.answeredBy || 'Volunteer Mentor'}</span>
-                      </div>
-                      <p className="text-xs text-slate-300 line-clamp-3 leading-relaxed whitespace-pre-line font-mono">
-                        {doubt.answer}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Priority Engine Triggered Rules Pills */}
-                  {!isResolved && priorityEval.triggeredRules.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-1">
-                      {priorityEval.triggeredRules.slice(0, 2).map((rule, rIdx) => (
-                        <span
-                          key={rIdx}
-                          className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 border border-slate-700/60 text-[10px]"
-                        >
-                          ⚡ {rule}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Row of Tags */}
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {tags.map((tag, idx) => (
-                      <span
-                        key={`${doubt.id}-tag-${idx}`}
-                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-800/80 text-slate-300 text-[11px] font-medium"
-                      >
-                        <Tag className="w-2.5 h-2.5 text-teal-400" />
-                        {tag.startsWith('#') ? tag : `#${tag}`}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Card Footer: Student Info & Action Button */}
-                <div className="mt-6 pt-4 border-t border-slate-800/70 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 text-xs text-slate-400">
-                    <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-teal-400 font-bold border border-slate-700 text-xs">
-                      <User className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <span className="font-medium text-slate-300 truncate max-w-[100px] block text-[11px]">
-                        {doubt.studentName || 'Student'}
-                      </span>
-                      <span className="text-[10px] text-slate-500">{formatTimeAgo(doubt.createdAt)}</span>
-                    </div>
-                  </div>
-
-                  {/* Interactive Answer / Edit Action */}
+            <div className="flex items-center gap-2 self-start sm:self-auto text-xs">
+              <span className="text-slate-500 font-bold uppercase text-[10px]">Filter Priority:</span>
+              <div className="flex bg-white p-1 rounded-xl border border-slate-200">
+                {(['All', 'CRITICAL', 'HIGH', 'MEDIUM', 'NORMAL'] as const).map((tier) => (
                   <button
+                    key={tier}
                     type="button"
-                    id={`btn-answer-doubt-${doubt.id}`}
-                    onClick={() => handleOpenAnswerModal(doubt)}
-                    className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-md ${
-                      isResolved
-                        ? 'bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/20'
-                        : 'bg-teal-500 hover:bg-teal-400 text-slate-950 hover:shadow-teal-500/20 active:scale-95'
+                    onClick={() => setPriorityFilter(tier)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition ${
+                      priorityFilter === tier
+                        ? 'bg-slate-900 text-white'
+                        : 'text-slate-600 hover:bg-slate-100'
                     }`}
                   >
-                    {isResolved ? (
-                      <>
-                        <Check className="w-3.5 h-3.5" />
-                        <span>View / Edit Answer</span>
-                      </>
-                    ) : (
-                      <>
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        <span>Answer Roadblock</span>
-                      </>
-                    )}
+                    {tier}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Cards Grid for the 3 Students */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {filteredStudents.map((student) => {
+              const priority = student.priorityEvaluation || evaluateStudentPriority(student);
+              return (
+                <div
+                  key={student.id}
+                  className="bg-white rounded-3xl border border-slate-200 shadow-xs hover:shadow-md transition flex flex-col justify-between overflow-hidden"
+                >
+                  {/* Top Priority Banner */}
+                  <div className={`p-3.5 border-b ${priority.badgeBg} ${priority.badgeBorder} flex items-center justify-between`}>
+                    <span className={`text-xs font-black uppercase tracking-wider ${priority.badgeText} flex items-center gap-1.5`}>
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{priority.badgeLabel}</span>
+                    </span>
+                    <span className="text-xs font-extrabold text-slate-700">
+                      Score {priority.score}/100
+                    </span>
+                  </div>
+
+                  {/* Card Content */}
+                  <div className="p-5 space-y-4 flex-1">
+                    {/* Student Info Header */}
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={student.avatarUrl}
+                        alt={student.name}
+                        className="w-14 h-14 rounded-2xl object-cover border border-slate-200 shadow-xs shrink-0"
+                      />
+                      <div className="space-y-0.5 overflow-hidden">
+                        <h3 className="font-extrabold text-slate-900 text-base truncate">{student.name}</h3>
+                        <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md inline-block">
+                          {student.cradleStage}
+                        </span>
+                        <p className="text-[11px] text-slate-500 truncate">{student.schoolOrCollege}</p>
+                      </div>
+                    </div>
+
+                    {/* Dream Career & Track */}
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-1">
+                      <div className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Dream Career:</div>
+                      <div className="font-extrabold text-sky-800">{student.dreamCareer}</div>
+                      <div className="text-[11px] text-slate-600 truncate">{student.trackTitle}</div>
+                    </div>
+
+                    {/* Telemetry Metrics */}
+                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                      <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
+                        <span className="text-[10px] text-slate-400 font-bold block uppercase">Attendance</span>
+                        <span className={`font-black text-sm ${student.attendanceRate < 75 ? 'text-rose-600' : 'text-slate-800'}`}>
+                          {student.attendanceRate}%
+                        </span>
+                      </div>
+                      <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
+                        <span className="text-[10px] text-slate-400 font-bold block uppercase">Academic</span>
+                        <span className={`font-black text-sm ${student.academicScore < 65 ? 'text-rose-600' : 'text-slate-800'}`}>
+                          {student.academicScore}%
+                        </span>
+                      </div>
+                      <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
+                        <span className="text-[10px] text-slate-400 font-bold block uppercase">Doubts</span>
+                        <span className="font-black text-sm text-slate-800">
+                          {student.unresolvedDoubtsCount} open
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Triggered Risk Rules Summary */}
+                    <div className="space-y-1 text-xs">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Risk Assessment:</span>
+                      <div className="space-y-1">
+                        {priority.triggeredRules.slice(0, 2).map((rule, idx) => (
+                          <div key={idx} className="flex items-center gap-1.5 text-[11px] text-slate-700 bg-rose-50/60 p-1.5 rounded-lg border border-rose-100">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                            <span className="truncate">{rule}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Last Offline Visit Status */}
+                    <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-100">
+                      <span>Last Home Visit:</span>
+                      <strong className={priority.daysSinceLastVisit > 30 ? 'text-rose-600 font-bold' : 'text-slate-700 font-semibold'}>
+                        {student.lastHomeVisitDate ? `${priority.daysSinceLastVisit} days ago` : 'Never visited'}
+                      </strong>
+                    </div>
+                  </div>
+
+                  {/* Card Actions */}
+                  <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedStudentForDossier(student)}
+                      className="flex-1 py-2 px-3 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 text-xs font-bold transition shadow-2xs flex items-center justify-center gap-1.5"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-slate-600" />
+                      <span>Full Record</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedStudentForVisitLogger(student);
+                        setActiveTab('visit-logger');
+                      }}
+                      className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-2xs flex items-center justify-center gap-1.5"
+                    >
+                      <Mic className="w-3.5 h-3.5" />
+                      <span>Log Visit</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 2: OFFLINE FIELD VISIT VOICE LOGGER */}
+      {/* ========================================================================= */}
+      {activeTab === 'visit-logger' && (
+        <div className="max-w-4xl mx-auto animate-in fade-in duration-150">
+          <OfflineVisitLogger
+            assignedStudents={students}
+            preSelectedStudent={selectedStudentForVisitLogger}
+            currentUser={user}
+            onVisitLogged={(newVisit) => {
+              loadData();
+            }}
+          />
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 3: STUDENT DOUBTS RESOLUTION HUB */}
+      {/* ========================================================================= */}
+      {activeTab === 'doubts' && (
+        <div className="space-y-4 animate-in fade-in duration-150">
+          <div className="flex items-center justify-between pb-2">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Assigned Student Roadblocks & Doubts</h2>
+              <p className="text-xs text-slate-500">Provide direct answers with code or voice dictation to keep students moving.</p>
+            </div>
+            <button
+              onClick={() => refetchDoubts()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold transition"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-sky-600" />
+              <span>Refresh</span>
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {doubts.map((doubt) => (
+              <div
+                key={doubt.id}
+                className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:border-slate-300 transition space-y-3"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-slate-900 text-sm">{doubt.title}</span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      doubt.urgency === 'Urgent' ? 'bg-rose-100 text-rose-800' : 'bg-slate-100 text-slate-700'
+                    }`}>
+                      {doubt.urgency || 'Standard'}
+                    </span>
+                  </div>
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                    doubt.status === 'resolved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    {doubt.status === 'resolved' ? 'Resolved' : 'Pending Answer'}
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-700 leading-relaxed">{doubt.description}</p>
+
+                {doubt.answer && (
+                  <div className="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200 space-y-1 text-xs text-slate-800">
+                    <div className="font-bold text-emerald-900 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Answered by {doubt.answered_by_name || 'Mentor'}:</span>
+                    </div>
+                    <p className="leading-relaxed">{doubt.answer}</p>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                  <span className="text-slate-500 font-medium">Category: {doubt.category}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenAnswerModal(doubt)}
+                    className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold shadow-xs transition flex items-center gap-1.5"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{doubt.answer ? 'Edit Answer' : 'Answer Question'}</span>
                   </button>
                 </div>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* --------------------------------------------------------------------- */}
-      {/* RICH ANSWER & RESOLUTION MODAL */}
-      {/* --------------------------------------------------------------------- */}
-      {activeAnsweringDoubt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-150">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full p-6 sm:p-7 space-y-5 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
-            {/* Modal Header */}
-            <div className="flex items-start justify-between border-b border-slate-800 pb-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-md bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-semibold uppercase">
-                    {activeAnsweringDoubt.category}
-                  </span>
-                  <span className="text-xs text-slate-400">Asked by {activeAnsweringDoubt.studentName || 'Student'}</span>
-                </div>
-                <h3 className="text-lg font-bold text-slate-100">{activeAnsweringDoubt.title}</h3>
-              </div>
-              <button
-                onClick={() => setActiveAnsweringDoubt(null)}
-                className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition"
+      {/* ========================================================================= */}
+      {/* TAB 4: 1-ON-1 MENTORSHIP REQUESTS */}
+      {/* ========================================================================= */}
+      {activeTab === 'requests' && (
+        <div className="space-y-4 animate-in fade-in duration-150">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Direct Mentorship & Guidance Requests</h2>
+            <p className="text-xs text-slate-500">Incoming guidance requests from students assigned under your care.</p>
+          </div>
+
+          <div className="space-y-3">
+            {mentorshipRequests.map((req) => (
+              <div
+                key={req.id}
+                className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3"
               >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={req.studentAvatar || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80'}
+                      alt={req.studentName}
+                      className="w-10 h-10 rounded-xl object-cover border border-slate-200"
+                    />
+                    <div>
+                      <h4 className="font-extrabold text-slate-900 text-sm">{req.studentName}</h4>
+                      <span className="text-[11px] text-slate-500">{new Date(req.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
 
-            {/* Original Student Query Box */}
-            <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                Student road block:
-              </span>
-              <p className="text-xs text-slate-200 italic leading-relaxed">
-                &ldquo;{activeAnsweringDoubt.transcript || activeAnsweringDoubt.description}&rdquo;
-              </p>
-            </div>
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                    req.status === 'completed' ? 'bg-slate-100 text-slate-700' :
+                    req.status === 'accepted' ? 'bg-emerald-100 text-emerald-800' :
+                    'bg-purple-100 text-purple-800'
+                  }`}>
+                    {req.status === 'accepted' ? 'Accepted / Scheduled' : req.status === 'completed' ? 'Completed' : 'Pending Request'}
+                  </span>
+                </div>
 
-            {/* Error notice if any */}
-            {actionErrorMsg && (
-              <div className="p-3 rounded-xl bg-rose-950/80 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{actionErrorMsg}</span>
-              </div>
-            )}
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-1 text-xs text-slate-800">
+                  <div className="font-bold text-slate-900">{req.topic}</div>
+                  <p className="leading-relaxed text-slate-600">{req.description}</p>
+                  <div className="text-[11px] text-slate-500 pt-1 flex items-center gap-3">
+                    <span>Mode: <strong className="text-slate-800">{req.preferredMode}</strong></span>
+                    <span>•</span>
+                    <span>Urgency: <strong className={req.urgency === 'Urgent' ? 'text-rose-600' : 'text-slate-800'}>{req.urgency}</strong></span>
+                  </div>
+                </div>
 
-            {/* Form Fields: Answer explanation */}
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-200">
-                    Solution & Conceptual Explanation
-                  </label>
-                  {/* Voice Dictation Toggle */}
-                  {isVoiceSupported && (
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  {req.status === 'pending' && (
                     <button
                       type="button"
-                      onClick={handleToggleVoiceDictation}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition ${
-                        isListening
-                          ? 'bg-rose-600 text-white animate-pulse'
-                          : 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700'
-                      }`}
+                      onClick={() => handleAcceptRequest(req.id)}
+                      className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5"
                     >
-                      {isListening ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3 text-teal-400" />}
-                      <span>{isListening ? 'Stop Speaking' : 'Dictate with Voice'}</span>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Accept & Schedule</span>
+                    </button>
+                  )}
+                  {req.status === 'accepted' && (
+                    <button
+                      type="button"
+                      onClick={() => handleCompleteRequest(req.id)}
+                      className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition shadow-xs"
+                    >
+                      Mark as Completed
                     </button>
                   )}
                 </div>
-                <textarea
-                  value={answerText}
-                  onChange={(e) => setAnswerText(e.target.value)}
-                  rows={4}
-                  placeholder="Explain the solution clearly, step-by-step guidance, why the issue occurred, and architectural best practices..."
-                  className="w-full p-3.5 rounded-2xl bg-slate-950 border border-slate-800 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 text-xs text-slate-100 placeholder-slate-500 outline-none leading-relaxed transition"
-                />
               </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-              {/* Code Snippet Box */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                  <Code className="w-3.5 h-3.5 text-teal-400" />
-                  <span>Code Snippet / Implementation Example (Optional)</span>
-                </label>
-                <textarea
-                  value={codeSnippet}
-                  onChange={(e) => setCodeSnippet(e.target.value)}
-                  rows={3}
-                  placeholder="Paste working code example or fix here..."
-                  className="w-full p-3 rounded-xl bg-slate-950 font-mono text-xs text-teal-300 border border-slate-800 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 placeholder-slate-600 outline-none leading-relaxed transition"
-                />
-              </div>
-
-              {/* Reference Link */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                  <BookOpen className="w-3.5 h-3.5 text-teal-400" />
-                  <span>Recommended Documentation or Tutorial Link (Optional)</span>
-                </label>
-                <input
-                  type="url"
-                  value={referenceUrl}
-                  onChange={(e) => setReferenceUrl(e.target.value)}
-                  placeholder="https://react.dev/... or https://fastapi.tiangolo.com/..."
-                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 text-xs text-slate-100 placeholder-slate-500 outline-none transition"
-                />
-              </div>
+      {/* Answer Modal for Answering Doubts */}
+      {activeAnsweringDoubt && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-xl w-full border border-slate-200 shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-extrabold text-slate-900 text-base">Answer Student Doubt</h3>
+              <button onClick={() => setActiveAnsweringDoubt(null)} className="p-1 rounded-full text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            {/* Modal Actions */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
+              <span className="font-bold text-slate-900">{activeAnsweringDoubt.title}</span>
+              <p className="text-slate-600">{activeAnsweringDoubt.description}</p>
+            </div>
+
+            {actionSuccessMsg && (
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
+                {actionSuccessMsg}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Mentor Solution & Explanation
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isVoiceAnswering) {
+                      stopVoiceAnswering();
+                    } else {
+                      startVoiceAnswering();
+                    }
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold ${
+                    isVoiceAnswering ? 'bg-rose-600 text-white animate-pulse' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  <Mic className="w-3.5 h-3.5" />
+                  <span>{isVoiceAnswering ? 'Listening...' : 'Dictate Answer'}</span>
+                </button>
+              </div>
+
+              <textarea
+                rows={5}
+                value={answerText}
+                onChange={(e) => setAnswerText(e.target.value)}
+                placeholder="Write your explanation or guidance here..."
+                className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-sky-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setActiveAnsweringDoubt(null)}
-                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition"
               >
                 Cancel
               </button>
               <button
                 type="button"
-                id="btn-confirm-submit-answer"
                 onClick={handleSubmitAnswer}
-                disabled={isSubmittingAnswer || (!answerText.trim() && !codeSnippet.trim())}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-extrabold text-xs flex items-center gap-2 shadow-lg shadow-teal-500/20 transition hover:scale-[1.02] active:scale-98 disabled:opacity-50"
+                disabled={isSubmittingAnswer || !answerText.trim()}
+                className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-xs disabled:opacity-50"
               >
-                {isSubmittingAnswer ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Resolving & Notifying Student...</span>
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Submit Answer & Resolve Roadblock</span>
-                  </>
-                )}
+                {isSubmittingAnswer ? 'Submitting...' : 'Submit & Resolve'}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Student Detailed Dossier Modal */}
+      <StudentDossierModal
+        student={selectedStudentForDossier}
+        isOpen={Boolean(selectedStudentForDossier)}
+        onClose={() => setSelectedStudentForDossier(null)}
+        onOpenHomeVisitLogger={(stu) => {
+          setSelectedStudentForVisitLogger(stu);
+          setActiveTab('visit-logger');
+        }}
+        isMentorView={true}
+      />
     </div>
   );
 };

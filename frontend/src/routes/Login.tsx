@@ -15,24 +15,23 @@ import {
   ArrowRight, 
   Sparkles,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  Award,
+  Clock
 } from 'lucide-react';
 
 export const Login: React.FC = () => {
-  const { user, isAuthenticated, isLoading, login, setRole, signInWithSupabase, signUpWithSupabase, isSupabaseActive, getDashboardPath } = useAuth();
+  const { user, isAuthenticated, isLoading, signInWithSupabase, signUpWithSupabase, getDashboardPath } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Define where to send the user after they log in
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
-
-  // Mode: 'signin' or 'signup'
-  const isRegisterRoute = location.pathname === '/register' || location.search.includes('mode=signup') || location.search.includes('signup=true');
+  const isRegisterRoute = location.pathname === '/register' || location.search.includes('mode=signup');
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>(isRegisterRoute ? 'signup' : 'signin');
   const [selectedRole, setSelectedRole] = useState<UserRole>('student');
   const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('alex.chen@student.edu');
-  const [password, setPassword] = useState('MentorMatch2026!');
+  const [email, setEmail] = useState('rahul.k@student.shiftingorbits.org');
+  const [password, setPassword] = useState('StudentPass2026!');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -44,7 +43,6 @@ export const Login: React.FC = () => {
     }
   }, [location.pathname]);
 
-  // If user is ALREADY authenticated, automatically redirect to their dashboard
   if (!isLoading && isAuthenticated && user) {
     return <Navigate to={getDashboardPath(user.role)} replace />;
   }
@@ -54,24 +52,20 @@ export const Login: React.FC = () => {
     return getDashboardPath(role);
   };
 
-  const handleSelectRole = (role: UserRole) => {
+  const handleQuickFill = (role: UserRole, customEmail?: string, customName?: string) => {
     setSelectedRole(role);
-  };
-
-  const handleQuickFill = (role: UserRole) => {
-    setSelectedRole(role);
-    if (role === 'student') {
-      setEmail('alex.chen@student.edu');
-      setFullName('Alex Chen');
-      setPassword('StudentPass2026!');
-    } else if (role === 'mentor') {
-      setEmail('sarah.j@techmentor.org');
-      setFullName('Dr. Sarah Jenkins');
-      setPassword('MentorPass2026!');
-    } else {
-      setEmail('director@mentormatch.org');
+    if (role === 'admin') {
+      setEmail('director@shiftingorbits.org');
       setFullName('Program Director');
       setPassword('DirectorPass2026!');
+    } else if (role === 'mentor') {
+      setEmail(customEmail || 'sarah.jenkins@shiftingorbits.org');
+      setFullName(customName || 'Dr. Sarah Jenkins');
+      setPassword('MentorPass2026!');
+    } else {
+      setEmail('rahul.k@student.shiftingorbits.org');
+      setFullName('Rahul Kumar');
+      setPassword('StudentPass2026!');
     }
   };
 
@@ -82,11 +76,7 @@ export const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      // Map UI role state to strict database ENUM values ('student', 'mentor', 'admin')
-      const dbRole: UserRole = 
-        (selectedRole as string) === 'Volunteer' || selectedRole === 'mentor' ? 'mentor' :
-        (selectedRole as string) === 'Director' || selectedRole === 'admin' ? 'admin' :
-        'student';
+      const dbRole: UserRole = selectedRole;
 
       if (authMode === 'signin') {
         const result = await signInWithSupabase(email, password);
@@ -95,21 +85,21 @@ export const Login: React.FC = () => {
           setLoading(false);
           return;
         }
-        setSuccessMsg('Signed in successfully! Redirecting...');
+        setSuccessMsg('Signed in successfully! Redirecting to Shifting Orbits portal...');
         setTimeout(() => {
           navigate(getRoleDestination(dbRole));
-        }, 500);
+        }, 400);
       } else {
-        const result = await signUpWithSupabase(email, password, fullName || 'Community Member', dbRole);
+        const result = await signUpWithSupabase(email, password, fullName || 'Scholar', dbRole);
         if (!result.success) {
           setErrorMsg(result.error || 'Sign-up failed. Please check your details.');
           setLoading(false);
           return;
         }
-        setSuccessMsg('Account created successfully! Redirecting to your community dashboard...');
+        setSuccessMsg('Account created! Redirecting to your learning dashboard...');
         setTimeout(() => {
           navigate(getDashboardPath(dbRole));
-        }, 600);
+        }, 500);
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'An unexpected error occurred.');
@@ -119,53 +109,49 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="max-w-lg mx-auto py-8 px-4">
-      {/* Container Card */}
-      <div className="light-panel p-8 sm:p-10 rounded-3xl border border-slate-200 shadow-xl space-y-6">
-        {/* Header Branding */}
+    <div className="max-w-xl mx-auto py-8 px-4">
+      <div className="bg-white p-8 sm:p-10 rounded-3xl border border-slate-200 shadow-xl space-y-6">
+        {/* Header */}
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-600 to-emerald-500 mx-auto flex items-center justify-center shadow-md shadow-sky-600/20 mb-3">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-600 via-indigo-600 to-emerald-500 mx-auto flex items-center justify-center shadow-md shadow-sky-600/20 mb-3">
             <Heart className="w-6 h-6 text-white fill-white/20" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-            {authMode === 'signin' ? 'Welcome to MentorMatch' : 'Join Our Community'}
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
+            <span>NGO Field &amp; Cradle-to-College Network</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900">
+            {authMode === 'signin' ? 'Shifting Orbits Platform' : 'Join Shifting Orbits'}
           </h1>
           <p className="text-xs text-slate-500">
             {authMode === 'signin'
-              ? 'Access your voice mentorship sessions & learning pathways'
-              : 'Create an account to start asking questions or volunteer as a mentor'}
+              ? 'Empowering underprivileged students from cradle to college with targeted mentorship'
+              : 'Create an account to join as a scholar or volunteer mentor'}
           </p>
         </div>
 
-        {/* Tab Switcher: Sign In vs Create Account */}
+        {/* Tab Switcher */}
         <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
           <button
             type="button"
-            id="tab-signin"
             onClick={() => { setAuthMode('signin'); setErrorMsg(null); setSuccessMsg(null); }}
-            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition duration-150 ${
-              authMode === 'signin'
-                ? 'bg-white text-slate-900 shadow-xs'
-                : 'text-slate-500 hover:text-slate-900'
+            className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
+              authMode === 'signin' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
             }`}
           >
             Sign In
           </button>
           <button
             type="button"
-            id="tab-signup"
             onClick={() => { setAuthMode('signup'); setErrorMsg(null); setSuccessMsg(null); }}
-            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition duration-150 ${
-              authMode === 'signup'
-                ? 'bg-white text-slate-900 shadow-xs'
-                : 'text-slate-500 hover:text-slate-900'
+            className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
+              authMode === 'signup' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
             }`}
           >
             Create Account
           </button>
         </div>
 
-        {/* Error / Success Notifications */}
+        {/* Alerts */}
         {errorMsg && (
           <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -180,46 +166,44 @@ export const Login: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Role Selection Cards */}
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Role Cards */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wider">
-              {authMode === 'signin' ? 'Sign in as' : 'I want to join as a'}
+            <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
+              {authMode === 'signin' ? 'Portal Persona' : 'I want to join as a'}
             </label>
             <div className="grid grid-cols-3 gap-2.5">
               <button
                 type="button"
-                id="role-student"
-                onClick={() => handleSelectRole('student')}
-                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition text-xs font-medium text-center ${
+                onClick={() => handleQuickFill('student')}
+                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition text-xs text-center ${
                   selectedRole === 'student'
                     ? 'bg-sky-50 border-sky-500 text-sky-800 ring-2 ring-sky-500/10 font-bold shadow-xs'
                     : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                 }`}
               >
                 <GraduationCap className={`w-5 h-5 ${selectedRole === 'student' ? 'text-sky-600' : 'text-slate-400'}`} />
-                <span>Student</span>
+                <span>Scholar</span>
               </button>
 
               <button
                 type="button"
-                id="role-mentor"
-                onClick={() => handleSelectRole('mentor')}
-                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition text-xs font-medium text-center ${
+                onClick={() => handleQuickFill('mentor')}
+                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition text-xs text-center ${
                   selectedRole === 'mentor'
                     ? 'bg-emerald-50 border-emerald-500 text-emerald-800 ring-2 ring-emerald-500/10 font-bold shadow-xs'
                     : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                 }`}
               >
                 <Users className={`w-5 h-5 ${selectedRole === 'mentor' ? 'text-emerald-600' : 'text-slate-400'}`} />
-                <span>Volunteer</span>
+                <span>Mentor</span>
               </button>
 
               <button
                 type="button"
-                id="role-admin"
-                onClick={() => handleSelectRole('admin')}
-                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition text-xs font-medium text-center ${
+                onClick={() => handleQuickFill('admin')}
+                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition text-xs text-center ${
                   selectedRole === 'admin'
                     ? 'bg-purple-50 border-purple-500 text-purple-800 ring-2 ring-purple-500/10 font-bold shadow-xs'
                     : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
@@ -231,7 +215,6 @@ export const Login: React.FC = () => {
             </div>
           </div>
 
-          {/* Full Name Field (Registration Mode Only) */}
           {authMode === 'signup' && (
             <div>
               <label className="block text-xs font-medium text-slate-700 mb-1">Full Name</label>
@@ -239,73 +222,59 @@ export const Login: React.FC = () => {
                 <input
                   type="text"
                   required
-                  id="input-fullname"
-                  placeholder="e.g. Alex Chen"
+                  placeholder="e.g. Rahul Kumar"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition"
+                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:border-sky-500 transition"
                 />
                 <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
               </div>
             </div>
           )}
 
-          {/* Email Address */}
+          {/* Email */}
           <div>
             <label className="block text-xs font-medium text-slate-700 mb-1">Email Address</label>
             <div className="relative">
               <input
                 type="email"
                 required
-                id="input-email"
-                placeholder="name@organization.org"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition"
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:border-sky-500 transition"
               />
               <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
             </div>
           </div>
 
-          {/* Password Field */}
+          {/* Password */}
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-medium text-slate-700">Password</label>
-              {authMode === 'signin' && (
-                <span className="text-xs text-sky-600 hover:text-sky-700 cursor-pointer">
-                  Forgot password?
-                </span>
-              )}
-            </div>
+            <label className="block text-xs font-medium text-slate-700 mb-1">Password</label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
-                id="input-password"
-                placeholder="••••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition font-mono"
+                className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:border-sky-500 transition font-mono"
               />
               <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
               <button
                 type="button"
-                id="btn-toggle-password"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600"
-                aria-label="Toggle password visibility"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
           </div>
 
-          {/* Submit Button */}
+          {/* Submit */}
           <button
             type="submit"
             id="btn-submit-auth"
             disabled={loading}
-            className={`w-full py-3 rounded-xl text-white font-bold text-sm shadow-sm transition duration-200 flex items-center justify-center gap-2 ${
+            className={`w-full py-3 rounded-xl text-white font-extrabold text-sm shadow-md transition flex items-center justify-center gap-2 ${
               selectedRole === 'mentor'
                 ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20'
                 : selectedRole === 'admin'
@@ -322,8 +291,8 @@ export const Login: React.FC = () => {
               <>
                 <span>
                   {authMode === 'signin'
-                    ? `Sign In as ${selectedRole === 'mentor' ? 'Volunteer' : selectedRole === 'admin' ? 'Director' : 'Student'}`
-                    : `Create ${selectedRole === 'mentor' ? 'Volunteer' : selectedRole === 'admin' ? 'Director' : 'Student'} Account`}
+                    ? `Sign In to ${selectedRole === 'mentor' ? 'Mentor Board' : selectedRole === 'admin' ? 'Admin Portal' : 'Scholar Portal'}`
+                    : `Create Account`}
                 </span>
                 <ArrowRight className="w-4 h-4" />
               </>
@@ -331,32 +300,80 @@ export const Login: React.FC = () => {
           </button>
         </form>
 
-        {/* Quick-Fill Presets for Easy Evaluation */}
-        <div className="pt-4 border-t border-slate-100 text-center space-y-2">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-            Quick Persona Demo Presets
-          </span>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickFill('student')}
-              className="px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-800 text-xs font-medium border border-sky-200 transition"
-            >
-              Alex (Student)
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickFill('mentor')}
-              className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-medium border border-emerald-200 transition"
-            >
-              Dr. Sarah (Mentor)
-            </button>
+        {/* Quick-Fill Presets for All 5 Mentors, Admin & Students */}
+        <div className="pt-4 border-t border-slate-100 space-y-3">
+          <div className="text-center">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+              Quick One-Click Demo Personas
+            </span>
+          </div>
+
+          {/* Mentors Presets */}
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold text-slate-500 block">5 Volunteer Mentors (3 assigned students each):</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
+              <button
+                type="button"
+                onClick={() => handleQuickFill('mentor', 'sarah.jenkins@shiftingorbits.org', 'Dr. Sarah Jenkins')}
+                className="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 text-left transition font-semibold flex items-center justify-between"
+              >
+                <span>Dr. Sarah Jenkins</span>
+                <span className="text-[10px] text-emerald-700 bg-white px-1.5 py-0.5 rounded">Active</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickFill('mentor', 'priya.sharma@shiftingorbits.org', 'Priya Sharma')}
+                className="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 text-left transition font-semibold flex items-center justify-between"
+              >
+                <span>Priya Sharma</span>
+                <span className="text-[10px] text-emerald-700 bg-white px-1.5 py-0.5 rounded">Active</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickFill('mentor', 'marcus.chen@shiftingorbits.org', 'Marcus Chen')}
+                className="p-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-left transition font-semibold flex items-center justify-between"
+              >
+                <span>Marcus Chen</span>
+                <span className="text-[10px] text-rose-700 bg-white px-1.5 py-0.5 rounded font-bold">14d Inactive</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickFill('mentor', 'elena.rostova@shiftingorbits.org', 'Elena Rostova')}
+                className="p-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-left transition font-semibold flex items-center justify-between"
+              >
+                <span>Elena Rostova</span>
+                <span className="text-[10px] text-amber-800 bg-white px-1.5 py-0.5 rounded font-bold">No Doubts 8d</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickFill('mentor', 'alex.rivera@shiftingorbits.org', 'Alex Rivera')}
+                className="p-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-left transition font-semibold flex items-center justify-between sm:col-span-2"
+              >
+                <span>Alex Rivera</span>
+                <span className="text-[10px] text-orange-800 bg-white px-1.5 py-0.5 rounded font-bold">No Visit 42d (SLA Flag)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Admin & Student */}
+          <div className="grid grid-cols-2 gap-2 pt-1">
             <button
               type="button"
               onClick={() => handleQuickFill('admin')}
-              className="px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-medium border border-purple-200 transition"
+              className="p-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 text-xs font-bold text-center transition"
             >
-              Director (Admin)
+              Program Director (Admin)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickFill('student')}
+              className="p-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 text-xs font-bold text-center transition"
+            >
+              Rahul Kumar (Scholar)
             </button>
           </div>
         </div>
@@ -364,3 +381,5 @@ export const Login: React.FC = () => {
     </div>
   );
 };
+
+export default Login;
