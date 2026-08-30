@@ -23,41 +23,41 @@ export const OfflineBanner: React.FC<OfflineBannerProps> = ({
   return (
     <aside 
       aria-label="Network Status Alert"
-      className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 inset-x-0 z-50 transition-all duration-200 ${
       !isOnline 
-        ? 'bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white shadow-lg shadow-amber-900/20'
-        : 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
+        ? 'bg-amber-700 text-white shadow-sm'
+        : 'bg-teal-700 text-white shadow-sm'
     } ${className}`}>
       <div className="max-w-7xl mx-auto px-4 py-2 sm:py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs font-medium">
         
         {/* Status indicator and text */}
         <div className="flex items-center gap-2.5">
           {!isOnline ? (
-            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center animate-pulse">
-              <WifiOff className="w-3.5 h-3.5" />
+            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+              <WifiOff className="w-3.5 h-3.5 text-white" />
             </div>
           ) : isSyncing ? (
             <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
             </div>
           ) : (
             <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-              <CheckCircle className="w-3.5 h-3.5" />
+              <CheckCircle className="w-3.5 h-3.5 text-white" />
             </div>
           )}
 
           <div>
             {!isOnline ? (
-              <span className="font-bold">
-                You are currently offline. Voice notes will be safely saved to your device and auto-uploaded when reconnected.
+              <span className="font-medium">
+                You are currently offline. Your question will be saved safely on your device and auto-uploaded when you reconnect.
               </span>
             ) : isSyncing ? (
-              <span className="font-bold">
-                Connection restored! Syncing {pendingCount} offline voice doubts with Whisper AI...
+              <span className="font-medium">
+                Connection restored! Syncing {pendingCount} offline question(s)...
               </span>
             ) : (
-              <span className="font-bold">
-                Back online. All offline queries have been synchronized.
+              <span className="font-medium">
+                Back online. All offline questions have been synchronized.
               </span>
             )}
           </div>

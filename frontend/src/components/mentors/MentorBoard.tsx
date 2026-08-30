@@ -587,30 +587,30 @@ export const MentorBoard: React.FC = () => {
 
       {/* Answer Modal for Answering Doubts */}
       {activeAnsweringDoubt && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-xl w-full border border-slate-200 shadow-2xl p-6 space-y-4">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-800/40 flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-2xl w-full border border-slate-200 shadow-md p-6 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-extrabold text-slate-900 text-base">Answer Student Doubt</h3>
-              <button onClick={() => setActiveAnsweringDoubt(null)} className="p-1 rounded-full text-slate-400 hover:text-slate-600">
+              <h3 className="font-bold text-slate-800 text-base">Answer Student Question</h3>
+              <button onClick={() => setActiveAnsweringDoubt(null)} className="p-1 rounded-full text-gray-400 hover:text-slate-600 transition">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
-              <span className="font-bold text-slate-900">{activeAnsweringDoubt.title}</span>
-              <p className="text-slate-600">{activeAnsweringDoubt.description}</p>
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1 max-w-prose">
+              <span className="font-bold text-slate-800 block text-sm">{activeAnsweringDoubt.title}</span>
+              <p className="text-slate-600 leading-relaxed font-normal">{activeAnsweringDoubt.description}</p>
             </div>
 
             {actionSuccessMsg && (
-              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium">
                 {actionSuccessMsg}
               </div>
             )}
 
-            <div className="space-y-2">
+            <div className="space-y-2 max-w-prose">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                  Mentor Solution & Explanation
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-700">
+                  Teacher Explanation & Solution
                 </label>
                 <button
                   type="button"
@@ -621,8 +621,8 @@ export const MentorBoard: React.FC = () => {
                       startVoiceAnswering();
                     }
                   }}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold ${
-                    isVoiceAnswering ? 'bg-rose-600 text-white animate-pulse' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition ${
+                    isVoiceAnswering ? 'bg-rose-600 text-white animate-pulse' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
                   <Mic className="w-3.5 h-3.5" />
@@ -634,8 +634,8 @@ export const MentorBoard: React.FC = () => {
                 rows={5}
                 value={answerText}
                 onChange={(e) => setAnswerText(e.target.value)}
-                placeholder="Write your explanation or guidance here..."
-                className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-sky-500"
+                placeholder="Provide a clear, step-by-step explanation to help the student understand..."
+                className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 leading-relaxed focus:bg-white focus:outline-none focus:border-teal-600 transition"
               />
             </div>
 
@@ -643,17 +643,18 @@ export const MentorBoard: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setActiveAnsweringDoubt(null)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition"
+                className="px-4 py-2 rounded-xl text-xs font-medium text-gray-400 hover:text-slate-600 transition"
               >
                 Cancel
               </button>
               <button
                 type="button"
+                id="btn-submit-answer"
                 onClick={handleSubmitAnswer}
                 disabled={isSubmittingAnswer || !answerText.trim()}
-                className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-xs disabled:opacity-50"
+                className="px-5 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold transition shadow-xs disabled:opacity-50"
               >
-                {isSubmittingAnswer ? 'Submitting...' : 'Submit & Resolve'}
+                {isSubmittingAnswer ? 'Submitting...' : 'Submit Explanation'}
               </button>
             </div>
           </div>

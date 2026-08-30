@@ -64,6 +64,14 @@ export const mockUsers: Record<string, User> = {
     role: 'admin',
     avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
   },
+  'director@shiftingorbits.org': {
+    id: '00000000-0000-0000-0000-000000000000',
+    name: 'Program Director',
+    fullName: 'Program Director',
+    email: 'director@shiftingorbits.org',
+    role: 'admin',
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+  },
   'sarah.jenkins@shiftingorbits.org': {
     id: '00000000-0000-0000-0000-000000000001',
     name: 'Dr. Sarah Jenkins',
@@ -71,7 +79,7 @@ export const mockUsers: Record<string, User> = {
     email: 'sarah.jenkins@shiftingorbits.org',
     role: 'mentor',
     avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-    specialization: ['Web Dev', 'React', 'Accessibility'],
+    specialization: ['Physics', 'Chemistry', 'Kinematics'],
     assignedStudentIds: ['stu-001', 'stu-002', 'stu-003'],
   },
   'priya.sharma@shiftingorbits.org': {
@@ -81,7 +89,7 @@ export const mockUsers: Record<string, User> = {
     email: 'priya.sharma@shiftingorbits.org',
     role: 'mentor',
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    specialization: ['Python', 'AI/ML', 'Data Science'],
+    specialization: ['Algebra', 'Calculus', 'Trigonometry'],
     assignedStudentIds: ['stu-004', 'stu-005', 'stu-006'],
   },
   'marcus.chen@shiftingorbits.org': {
@@ -91,7 +99,7 @@ export const mockUsers: Record<string, User> = {
     email: 'marcus.chen@shiftingorbits.org',
     role: 'mentor',
     avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    specialization: ['Cloud', 'PostgreSQL', 'DevOps'],
+    specialization: ['Chemistry', 'Biology', 'Redox Reactions'],
     assignedStudentIds: ['stu-007', 'stu-008', 'stu-009'],
   },
   'elena.rostova@shiftingorbits.org': {
@@ -101,7 +109,7 @@ export const mockUsers: Record<string, User> = {
     email: 'elena.rostova@shiftingorbits.org',
     role: 'mentor',
     avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
-    specialization: ['Mathematics', 'Algorithms'],
+    specialization: ['Geometry', 'Algebra', 'Trigonometry'],
     assignedStudentIds: ['stu-010', 'stu-011', 'stu-012'],
   },
   'alex.rivera@shiftingorbits.org': {
@@ -111,7 +119,7 @@ export const mockUsers: Record<string, User> = {
     email: 'alex.rivera@shiftingorbits.org',
     role: 'mentor',
     avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-    specialization: ['Career Counseling', 'Vocational Prep'],
+    specialization: ['World History', 'Literature', 'Essay Writing'],
     assignedStudentIds: ['stu-013', 'stu-014', 'stu-015'],
   },
   student: {

@@ -341,8 +341,8 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         />
       )}
 
-      {/* Main Glassmorphism Card */}
-      <div className="bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200/90 shadow-xl p-6 sm:p-8 space-y-6 transition-all duration-300">
+      {/* Main Card */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6 transition-all duration-300">
         
         {/* Top Header Badge */}
         <div className="flex items-center justify-between">
@@ -352,20 +352,20 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
                 ? 'bg-rose-500 animate-ping'
                 : recorderState === 'recorded'
                 ? 'bg-emerald-500'
-                : 'bg-sky-500'
+                : 'bg-teal-600'
             }`} />
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-700">
               {recorderState === 'recording'
-                ? 'Live Voice Intake'
+                ? 'Recording Your Question'
                 : recorderState === 'recorded'
-                ? 'Clip Ready for Review'
-                : 'Voice-to-Text Mentorship'}
+                ? 'Audio Ready for Review'
+                : 'Voice Question Intake'}
             </span>
           </div>
 
-          {/* Time indicator or Mode */}
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs font-mono font-semibold text-slate-700">
-            <Clock className="w-3.5 h-3.5 text-slate-500" />
+          {/* Time indicator */}
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-xs font-mono font-medium text-slate-700">
+            <Clock className="w-3.5 h-3.5 text-slate-400" />
             <span>
               {recorderState === 'recording'
                 ? formatTime(recordingDuration)
@@ -383,24 +383,22 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
           {recorderState === 'idle' && (
             <div className="text-center space-y-5">
               <div className="relative inline-block">
-                {/* Glowing Outer Rings */}
-                <div className="absolute -inset-2 rounded-full bg-gradient-to-tr from-sky-500/20 to-emerald-500/20 blur-md animate-pulse" />
                 <button
                   type="button"
                   id="btn-start-recording"
                   onClick={startRecording}
                   aria-label="Start Voice Recording"
-                  className="relative z-10 w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-tr from-sky-600 via-sky-500 to-emerald-500 hover:from-sky-500 hover:to-emerald-400 text-white flex flex-col items-center justify-center shadow-lg shadow-sky-500/25 hover:scale-105 active:scale-95 transition-all duration-200 group"
+                  className="relative z-10 w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-teal-700 hover:bg-teal-800 text-white flex flex-col items-center justify-center shadow-sm hover:scale-105 active:scale-95 transition-all duration-200 group"
                 >
                   <Mic className="w-9 h-9 sm:w-10 sm:h-10 mb-1 group-hover:scale-110 transition-transform" />
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest">Speak</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Speak</span>
                 </button>
               </div>
 
               <div className="space-y-1 max-w-sm mx-auto">
-                <h3 className="text-base font-bold text-slate-900">Tap the Microphone to Ask</h3>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  Explain your roadblock freely in English. Whisper AI will structure your doubt and route it to domain mentors.
+                <h3 className="text-base font-bold text-slate-800">Tap the Microphone to Ask</h3>
+                <p className="text-xs text-slate-500 leading-relaxed font-normal">
+                  Ask your question out loud in your own words. Dedicated teachers and mentors are here to guide you step-by-step.
                 </p>
               </div>
             </div>
@@ -410,8 +408,8 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
           {recorderState === 'recording' && (
             <div className="w-full text-center space-y-5">
               {/* Real-time Waveform Canvas */}
-              <div className="w-full h-24 sm:h-28 bg-slate-900/95 rounded-2xl p-3 border border-slate-800 shadow-inner flex flex-col items-center justify-center relative overflow-hidden">
-                <div className="absolute top-2 left-3 flex items-center gap-1.5 text-[10px] font-mono text-rose-400 font-bold uppercase tracking-widest">
+              <div className="w-full h-24 sm:h-28 bg-slate-50 rounded-2xl p-3 border border-slate-200 shadow-inner flex flex-col items-center justify-center relative overflow-hidden">
+                <div className="absolute top-2 left-3 flex items-center gap-1.5 text-[10px] font-mono text-rose-600 font-semibold uppercase tracking-widest">
                   <Radio className="w-3.5 h-3.5 animate-pulse text-rose-500" />
                   <span>Recording Audio</span>
                 </div>
@@ -430,7 +428,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
                   type="button"
                   id="btn-stop-recording"
                   onClick={stopRecording}
-                  className="px-6 py-3 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-md shadow-rose-600/30 hover:scale-105 active:scale-95 transition-all"
+                  className="px-6 py-3 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs uppercase tracking-wider flex items-center gap-2 shadow-sm transition-all"
                 >
                   <Square className="w-4 h-4 fill-current" />
                   <span>Done Speaking</span>
@@ -441,7 +439,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
                   type="button"
                   id="btn-cancel-recording"
                   onClick={handleReRecord}
-                  className="px-4 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition"
+                  className="px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-gray-400 hover:text-slate-600 font-medium text-xs transition"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

@@ -28,36 +28,36 @@ import type { Doubt } from '../../types';
 
 const DEFAULT_MATCHED_MENTORS: Mentor[] = [
   {
-    id: '00000000-0000-0000-0000-000000000002',
+    id: '00000000-0000-0000-0000-000000000001',
     fullName: 'Dr. Sarah Jenkins',
-    headline: 'Lead Frontend Architect & React Core Contributor',
-    bio: '12+ years building accessible web applications, state management architectures, and React component libraries.',
-    expertiseTags: ['React', 'Frontend', 'TypeScript', 'Tailwind CSS', 'Web Accessibility'],
-    rating: 4.96,
+    headline: 'Senior Physics & Chemistry Teacher',
+    bio: '12+ years helping high school students build confidence in Physics, Chemistry, and lab sciences.',
+    expertiseTags: ['Physics', 'Chemistry', 'Kinematics', 'Lab Safety', 'Study Skills'],
+    rating: 4.98,
     reviewsCount: 142,
     matchScore: 96,
     isAvailable: true,
   },
   {
-    id: '00000000-0000-0000-0000-000000000003',
-    fullName: 'Elena Rostova',
-    headline: 'Senior Staff Web Engineer & Media Streaming Specialist',
-    bio: 'Specializes in Web Audio API, real-time audio visualization, MediaRecorder streams, and modern React performance.',
-    expertiseTags: ['Frontend', 'Web Audio', 'MediaRecorder', 'TypeScript', 'React'],
-    rating: 4.91,
-    reviewsCount: 98,
-    matchScore: 91,
+    id: '00000000-0000-0000-0000-000000000002',
+    fullName: 'Priya Sharma',
+    headline: 'Algebra & Calculus Educator',
+    bio: 'Passionate about nurturing high school students in Mathematics, Calculus, and problem-solving.',
+    expertiseTags: ['Algebra', 'Calculus', 'Geometry', 'Trigonometry', 'Exam Prep'],
+    rating: 5.00,
+    reviewsCount: 154,
+    matchScore: 92,
     isAvailable: true,
   },
   {
-    id: '00000000-0000-0000-0000-000000000004',
-    fullName: 'Marcus Vance',
-    headline: 'Competitive Programmer & Algorithms Coach',
-    bio: 'Ex-FAANG engineer mentoring students in Dynamic Programming, Graph Theory, Trees, and technical coding interviews.',
-    expertiseTags: ['Algorithms', 'Data Structures', 'Dynamic Programming', 'Python'],
-    rating: 4.88,
-    reviewsCount: 176,
-    matchScore: 84,
+    id: '00000000-0000-0000-0000-000000000003',
+    fullName: 'Marcus Chen',
+    headline: 'Chemistry & Environmental Science Teacher',
+    bio: 'Specializes in chemical equations, stoichiometry, and environmental science learning.',
+    expertiseTags: ['Chemistry', 'Biology', 'Redox Reactions', 'Lab Safety', 'Science Projects'],
+    rating: 4.85,
+    reviewsCount: 98,
+    matchScore: 88,
     isAvailable: true,
   },
 ];
@@ -146,10 +146,10 @@ export const VoiceQuery: React.FC = () => {
     try {
       const saved = localStorage.getItem('mm_current_doubt');
       return saved ? JSON.parse(saved) : {
-        transcript: 'I am building a responsive React dashboard with TypeScript and need advice on architecting role-based routing and audio streaming.',
-        summary: 'Student seeking code architecture guidance on React Router role guards, HTML5 MediaRecorder voice capture, and vector matching.',
-        category: 'Frontend',
-        tags: ['react', 'typescript', 'voice-intake', 'web-audio'],
+        transcript: "I don't understand how to balance this redox equation in chemistry.",
+        summary: "Student seeking step-by-step guidance on balancing oxidation and reduction half-reactions in acidic solution.",
+        category: 'Chemistry',
+        tags: ['chemistry', 'redox-reactions', 'lab-prep', 'equations'],
         urgency: 'Standard',
       };
     } catch {
@@ -172,7 +172,7 @@ export const VoiceQuery: React.FC = () => {
 
   const [intakeMode, setIntakeMode] = useState<'voice' | 'text'>('voice');
   const [textTitle, setTextTitle] = useState('');
-  const [textCategory, setTextCategory] = useState('Frontend');
+  const [textCategory, setTextCategory] = useState('Physics');
   const [textUrgency, setTextUrgency] = useState('Standard');
   const [textDescription, setTextDescription] = useState('');
   const [textTags, setTextTags] = useState('');
@@ -548,19 +548,19 @@ export const VoiceQuery: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 block">Technical Category</label>
+              <label className="text-xs font-semibold text-slate-700 block">Academic Subject</label>
               <select
                 value={textCategory}
                 onChange={(e) => setTextCategory(e.target.value)}
-                className="w-full text-xs text-slate-800 p-2.5 rounded-xl border border-slate-200 bg-white focus:outline-hidden focus:border-sky-500 transition"
+                className="w-full text-xs text-slate-800 p-2.5 rounded-xl border border-slate-200 bg-white focus:outline-hidden focus:border-teal-600 transition"
               >
-                <option value="Frontend">Frontend (React, TypeScript, CSS, UI)</option>
-                <option value="Backend">Backend (FastAPI, Python, SQL, REST)</option>
-                <option value="AI/ML">AI/ML (Whisper, pgvector, LLMs)</option>
-                <option value="Algorithms">Algorithms (DP, Trees, Graphs, LeetCode)</option>
-                <option value="System Design">System Design & Architecture</option>
-                <option value="Career & Projects">Career Guidance & Portfolio</option>
-                <option value="General">General Question</option>
+                <option value="Physics">Physics (Kinematics, Forces, Optics, Motion)</option>
+                <option value="Chemistry">Chemistry (Redox, Equations, Atoms, Labs)</option>
+                <option value="Algebra">Algebra (Equations, Calculus, Functions)</option>
+                <option value="Geometry">Geometry (Proofs, Angles, Trigonometry)</option>
+                <option value="Biology">Biology (Cells, Photosynthesis, Genetics)</option>
+                <option value="World History">World History (Revolutions, Empires, Trade)</option>
+                <option value="Literature">Literature (Essays, Analysis, Poetry)</option>
               </select>
             </div>
 

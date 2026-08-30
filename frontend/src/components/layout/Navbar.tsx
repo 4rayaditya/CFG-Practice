@@ -87,17 +87,17 @@ export const Navbar: React.FC = () => {
   const getRoleBadge = (role: string) => {
     switch (role) {
       case 'admin':
-        return { label: 'Program Director', bg: 'bg-purple-100 text-purple-800 border-purple-200', icon: Shield };
+        return { label: 'Admin', bg: 'bg-slate-100 text-slate-800 border-slate-200', icon: Shield };
       case 'mentor':
-        return { label: 'Volunteer Mentor', bg: 'bg-emerald-100 text-emerald-800 border-emerald-200', icon: Users };
+        return { label: 'Teacher / Mentor', bg: 'bg-emerald-50 text-emerald-800 border-emerald-200', icon: Users };
       case 'student':
       default:
-        return { label: 'Underprivileged Scholar', bg: 'bg-sky-100 text-sky-800 border-sky-200', icon: GraduationCap };
+        return { label: 'Student', bg: 'bg-teal-50 text-teal-800 border-teal-200', icon: GraduationCap };
     }
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
+    <header className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo */}

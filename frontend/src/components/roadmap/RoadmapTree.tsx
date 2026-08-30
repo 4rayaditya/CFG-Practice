@@ -58,65 +58,60 @@ export interface RoadmapTreeProps {
 }
 
 const DEFAULT_ROADMAP: RoadmapData = {
-  track_title: 'Full-Stack Modern Web & AI Development Track',
-  summary: 'Master full-stack React 19 architecture, local JWT auth, Groq Whisper voice intake, and pgvector semantic mentor matching.',
-  total_estimated_hours: 115,
-  skill_level: 'Intermediate',
+  track_title: 'AP Physics & Kinematics Mastery Track',
+  summary: 'Master High School Physics, Kinematics equations, Newton\'s laws of motion, Work-Energy theorem, and lab experiment analysis.',
+  total_estimated_hours: 90,
+  skill_level: 'Grade 10-12',
   target_timeline: '3 months',
   milestones: [
     {
       id: 1,
-      title: 'Phase 1: React 19, TypeScript & Web Audio Intake',
-      description: 'Master typed React component design, Tailwind CSS styling tokens, and HTML5 Web Audio API waveform visualization.',
-      estimated_hours: 35,
+      title: 'Phase 1: Kinematics & Motion Vectors',
+      description: 'Understand displacement, velocity, acceleration, and 2D projectile motion decomposition.',
+      estimated_hours: 25,
       subtasks: [
-        'Create accessible glassmorphic UI cards with micro-animations',
-        'Implement MediaRecorder audio stream capture and canvas waveform spectrum',
-        'Enforce role-based layout redirects and 403 authorization boundaries'
+        'Master 1D uniform acceleration equations (v = u + at, s = ut + 0.5at^2)',
+        'Decompose 2D projectile vectors into horizontal and vertical components',
+        'Calculate total kinetic and potential energy at peak trajectory'
       ],
       resources: [
-        { name: 'React Official Documentation', url: 'https://react.dev', type: 'docs' },
-        { name: 'MDN Web Audio API Guide', url: 'https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API', type: 'docs' },
-        { name: 'Tailwind CSS Documentation', url: 'https://tailwindcss.com/docs', type: 'docs' }
+        { name: 'Physics OpenStax Textbook', url: 'https://openstax.org', type: 'docs' },
+        { name: 'PhET Motion Interactive Labs', url: 'https://phet.colorado.edu', type: 'tutorial' }
       ],
-      checkpoint_project: 'Voice Intake Audio Recorder component with live animated spectrum canvas.',
-      key_skills: ['React 19', 'TypeScript', 'Tailwind CSS', 'Web Audio API']
+      checkpoint_project: 'Complete Projectile Motion Problem Set and Lab Report.',
+      key_skills: ['Kinematics', 'Vectors', 'Projectile Motion', 'Energy Balances']
     },
     {
       id: 2,
-      title: 'Phase 2: FastAPI Backend & Local JWT Verification',
-      description: 'Build asynchronous REST API services with local HS256 JWT signature verification and role guards.',
-      estimated_hours: 35,
+      title: 'Phase 2: Newton\'s Laws & Dynamics',
+      description: 'Explore free-body diagrams, friction forces, centripetal acceleration, and momentum conservation.',
+      estimated_hours: 30,
       subtasks: [
-        'Set up FastAPI application with CORS and Pydantic validation',
-        'Implement zero-roundtrip Supabase JWT authentication middleware',
-        'Integrate Groq Whisper API (whisper-large-v3) for speech transcription'
+        'Draw accurate free-body force diagrams for inclined planes',
+        'Apply F = ma to multi-body pulley systems',
+        'Calculate impulse and momentum conservation in elastic collisions'
       ],
       resources: [
-        { name: 'FastAPI Tutorial', url: 'https://fastapi.tiangolo.com/tutorial/', type: 'docs' },
-        { name: 'Groq Cloud Documentation', url: 'https://console.groq.com/docs', type: 'docs' },
-        { name: 'PyJWT Documentation', url: 'https://pyjwt.readthedocs.io', type: 'docs' }
+        { name: 'Khan Academy Physics', url: 'https://khanacademy.org', type: 'tutorial' }
       ],
-      checkpoint_project: 'Secure FastAPI backend service with role guards and audio transcription endpoint.',
-      key_skills: ['FastAPI', 'JWT Auth', 'Groq Whisper', 'Pydantic', 'Python']
+      checkpoint_project: 'Newtonian Mechanics Problem Solving Portfolio.',
+      key_skills: ['Newton\'s Laws', 'Free-Body Diagrams', 'Momentum', 'Friction']
     },
     {
       id: 3,
-      title: 'Phase 3: Vector Embeddings, Mentor Matching & PWA Offline Sync',
-      description: 'Connect pgvector similarity search, Groq Llama 3 classification, and service worker background sync.',
-      estimated_hours: 45,
+      title: 'Phase 3: Work, Energy & AP Physics Board Prep',
+      description: 'Master work-energy theorem, conservation of mechanical energy, and comprehensive board exam review.',
+      estimated_hours: 35,
       subtasks: [
-        'Implement 384-dimensional query embedding generation with all-MiniLM-L6-v2',
-        'Create Supabase match_mentors RPC function for Cosine similarity search',
-        'Configure PWA manifest and offline IndexedDB voice query caching'
+        'Derive work done by constant and variable forces',
+        'Solve mechanical energy conservation for simple harmonic motion',
+        'Complete 3 full-length timed physics practice board exams'
       ],
       resources: [
-        { name: 'Supabase pgvector Docs', url: 'https://supabase.com/docs/guides/ai', type: 'docs' },
-        { name: 'pgvector GitHub Repository', url: 'https://github.com/pgvector/pgvector', type: 'github' },
-        { name: 'Vite PWA Plugin Guide', url: 'https://vite-pwa-org.netlify.app', type: 'docs' }
+        { name: 'AP Physics Practice Portal', url: 'https://apcentral.collegeboard.org', type: 'docs' }
       ],
-      checkpoint_project: 'Full-Stack MentorMatch AI platform with offline audio sync and live mentor matching.',
-      key_skills: ['pgvector', 'HNSW Indexes', 'PWA', 'IndexedDB', 'Supabase']
+      checkpoint_project: 'Final AP Physics Board Exam Review Mastery.',
+      key_skills: ['Work-Energy Theorem', 'Simple Harmonic Motion', 'Board Exam Review']
     }
   ]
 };

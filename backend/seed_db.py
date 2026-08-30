@@ -62,56 +62,58 @@ SUPABASE_KEY = (
 # -----------------------------------------------------------------------------
 
 CATEGORIES = [
-    "Computer Science / Algorithms",
-    "Web & Mobile Development",
-    "Database & Cloud Infrastructure",
-    "AI & Machine Learning",
-    "Career & Technical Interviews"
+    "Physics",
+    "Chemistry",
+    "Algebra",
+    "Geometry",
+    "Biology",
+    "World History",
+    "Literature"
 ]
 
 MENTOR_TEMPLATES = [
     {
         "name": "Dr. Sarah Jenkins",
         "email": "sarah.jenkins@shiftingorbits.org",
-        "headline": "Staff Fullstack Architect & Cradle-to-College Tech Lead",
-        "bio": "12+ years building accessible software. Volunteer mentor for underrepresented youth in tech across secondary and college levels.",
-        "tags": ["Web Dev", "React", "TypeScript", "Accessibility", "Career Strategy"],
+        "headline": "Senior Physics & Chemistry Teacher",
+        "bio": "12+ years helping high school students build confidence in Physics, Chemistry, and lab sciences.",
+        "tags": ["Physics", "Chemistry", "Kinematics", "Lab Safety", "Study Skills"],
         "rating": 4.98,
         "resolved_count": 48
     },
     {
         "name": "Priya Sharma",
         "email": "priya.sharma@shiftingorbits.org",
-        "headline": "AI/ML Systems Researcher & STEM Education Mentor",
-        "bio": "Passionate about nurturing first-generation college students in STEM, Applied Python, and Data Science careers.",
-        "tags": ["Python", "AI/ML", "Data Science", "Algorithms", "College Prep"],
+        "headline": "Algebra & Calculus Educator",
+        "bio": "Passionate about nurturing high school students in Mathematics, Calculus, and problem-solving.",
+        "tags": ["Algebra", "Calculus", "Trigonometry", "Exam Prep", "Mathematics"],
         "rating": 5.00,
         "resolved_count": 54
     },
     {
         "name": "Marcus Chen",
         "email": "marcus.chen@shiftingorbits.org",
-        "headline": "Cloud Infrastructure Architect & Systems Coach",
-        "bio": "Specializes in DevOps, PostgreSQL, and Linux foundations. Dedicated mentor for youth vocational programs.",
-        "tags": ["Cloud", "Linux", "PostgreSQL", "DevOps", "System Design"],
+        "headline": "Chemistry & Environmental Science Teacher",
+        "bio": "Specializes in chemical equations, stoichiometry, and environmental science learning.",
+        "tags": ["Chemistry", "Redox Reactions", "Biology", "Science Projects", "Lab Safety"],
         "rating": 4.85,
         "resolved_count": 25
     },
     {
         "name": "Elena Rostova",
         "email": "elena.rostova@shiftingorbits.org",
-        "headline": "Senior Math & Algorithms Educator",
-        "bio": "Coaches students preparing for secondary board exams and college entrance aptitude competitions.",
-        "tags": ["Mathematics", "Algorithms", "Logic", "Data Structures", "Exam Prep"],
+        "headline": "Senior Geometry & Mathematics Teacher",
+        "bio": "Coaching secondary school students through geometry proofs, algebra, and exam preparation.",
+        "tags": ["Geometry", "Algebra", "Trigonometry", "Proofs", "Math Competitions"],
         "rating": 4.90,
         "resolved_count": 31
     },
     {
         "name": "Alex Rivera",
         "email": "alex.rivera@shiftingorbits.org",
-        "headline": "Field Counselor & Vocational Pathways Lead",
-        "bio": "Focuses on student career counseling, parental engagement, and high school to college transitions.",
-        "tags": ["Career Counseling", "Vocational Training", "College Admissions", "Soft Skills"],
+        "headline": "World History & English Literature Educator",
+        "bio": "Guiding students in analytical essay writing, historical analysis, and literature comprehension.",
+        "tags": ["World History", "Literature", "Essay Writing", "Reading Comprehension", "Social Studies"],
         "rating": 4.92,
         "resolved_count": 38
     }
@@ -119,79 +121,61 @@ MENTOR_TEMPLATES = [
 
 DOUBT_TEMPLATES = [
     {
-        "title": "Understanding recursion and tree traversals in Python",
-        "description": "I am practicing binary search tree algorithms and having trouble understanding how the recursive call stack unwinds in pre-order vs in-order.",
-        "transcript": "Hi mentor! I am practicing binary search tree algorithms and having trouble understanding how the recursive call stack unwinds in pre-order vs in-order traversal. Could you explain with a visual example?",
-        "category": "Computer Science / Algorithms",
-        "tags": ["Python", "Algorithms", "BinaryTree", "Recursion"],
+        "title": "I don't understand how to balance this redox equation",
+        "description": "I am struggling to balance the half-reactions for oxidation and reduction in acidic solution.",
+        "transcript": "Hello teacher, I don't understand how to balance this redox equation in my chemistry homework. Could you explain the half-reaction method?",
+        "category": "Chemistry",
+        "tags": ["Chemistry", "Redox", "Equations", "LabPrep"],
         "status": "resolved",
         "urgency": "Standard",
-        "answer": "Think of the call stack as a literal stack of plates! In In-Order (Left, Root, Right), we always recurse as deep left as possible before popping to process the current node."
+        "answer": "Divide the equation into oxidation and reduction half-reactions first, balance atoms other than O and H, then add H2O and H+ ions before balancing charge with electrons."
     },
     {
-        "title": "Tips for landing first web development internship with no prior experience",
-        "description": "What are the best types of portfolio projects to demonstrate understanding of React and clean RESTful APIs for non-profit / social impact projects?",
-        "transcript": "What are the best types of portfolio projects to demonstrate understanding of React and clean RESTful APIs for non-profit and community projects?",
-        "category": "Career & Technical Interviews",
-        "tags": ["Career", "React", "Portfolio", "Internship"],
+        "title": "Can someone explain the chain rule in calculus?",
+        "description": "I understand basic derivatives, but I get confused when taking derivatives of composite functions like sin(x^2).",
+        "transcript": "Can someone explain the chain rule in calculus? I am getting confused when differentiating composite functions.",
+        "category": "Algebra",
+        "tags": ["Calculus", "ChainRule", "Derivatives", "Mathematics"],
         "status": "matched",
         "urgency": "High",
     },
     {
-        "title": "How to build accessible web forms for screen readers",
-        "description": "What are the essential ARIA attributes and keyboard navigation patterns to ensure my high school community site is accessible to everyone?",
-        "transcript": "What are the essential ARIA attributes and keyboard navigation patterns to ensure my site is accessible to all students?",
-        "category": "Web & Mobile Development",
-        "tags": ["Accessibility", "ARIA", "React", "HTML5"],
+        "title": "How does cellular respiration compare to photosynthesis in biology?",
+        "description": "I am preparing a biology study guide comparing energy transformation in chloroplasts versus mitochondria.",
+        "transcript": "How does cellular respiration compare to photosynthesis in biology? What are the key reactants and products?",
+        "category": "Biology",
+        "tags": ["Biology", "CellRespiration", "Photosynthesis", "Science"],
         "status": "resolved",
         "urgency": "Standard",
-        "answer": "Always prioritize semantic HTML (like <label htmlFor='...'>) before adding custom ARIA roles. Test tab navigation with your keyboard alone."
+        "answer": "Photosynthesis stores solar energy into glucose (6CO2 + 6H2O -> C6H12O6 + 6O2), while cellular respiration breaks down glucose to generate ATP energy!"
     },
     {
-        "title": "Database normalization 3NF vs BCNF differences",
-        "description": "Can someone provide a concrete table schema example where a relation is in 3NF but fails Boyce-Codd Normal Form?",
-        "transcript": "Can someone provide a concrete schema example where a table is in 3NF but fails BCNF? I have an exam coming up.",
-        "category": "Database & Cloud Infrastructure",
-        "tags": ["Database", "SQL", "Normalization", "3NF"],
+        "title": "How do I calculate kinetic energy in a projectile motion problem?",
+        "description": "I need help breaking down the vertical and horizontal velocity components to find total kinetic energy at maximum height.",
+        "transcript": "How do I calculate kinetic energy at the peak of projectile motion in physics?",
+        "category": "Physics",
+        "tags": ["Physics", "Kinematics", "KineticEnergy", "Vectors"],
         "status": "pending",
         "urgency": "Urgent",
     },
     {
-        "title": "Cosine distance vs Euclidean distance in Vector Embeddings",
-        "description": "Why is cosine similarity preferred over Euclidean L2 distance for comparing semantic similarity of text embeddings like all-MiniLM-L6-v2?",
-        "transcript": "Why is cosine similarity preferred over Euclidean distance when comparing text embeddings in pgvector?",
-        "category": "AI & Machine Learning",
-        "tags": ["pgvector", "Embeddings", "AI", "VectorMath"],
+        "title": "3D Geometry lines and planes shortest distance formula derivation",
+        "description": "Need step-by-step vector method explanation for skew lines distance formula.",
+        "transcript": "Can someone explain the derivation of the shortest distance between skew lines in 3D geometry?",
+        "category": "Geometry",
+        "tags": ["Geometry", "Vectors", "3DGeometry", "Trigonometry"],
         "status": "matched",
         "urgency": "Standard",
     },
     {
-        "title": "Optimizing Docker container build times for Vite + React",
-        "description": "My multi-stage Dockerfile is re-installing node_modules on every trivial CSS change. How do I properly layer package.json caching?",
-        "transcript": "My Dockerfile is re-installing node modules every time I change a file. How do I layer the cache correctly?",
-        "category": "Database & Cloud Infrastructure",
-        "tags": ["Docker", "Vite", "React", "DevOps"],
+        "title": "What were the primary economic causes of the American Revolution?",
+        "description": "I am preparing a history essay and want to structure key causes like colonial trade acts and taxation.",
+        "transcript": "What were the primary economic causes of the American Revolution for my history paper?",
+        "category": "World History",
+        "tags": ["WorldHistory", "EssayWriting", "AmericanRevolution", "SocialStudies"],
         "status": "resolved",
         "urgency": "Standard",
-        "answer": "Copy only package.json and package-lock.json first, run npm ci, and only then COPY . . to take advantage of Docker layer caching."
-    },
-    {
-        "title": "Handling offline sync with IndexedDB and Service Workers",
-        "description": "How do I queue POST requests in IndexedDB when the user goes offline, and automatically flush them when the online event fires?",
-        "transcript": "How do I queue user doubts in IndexedDB when offline and auto sync them when connection restores?",
-        "category": "Web & Mobile Development",
-        "tags": ["PWA", "IndexedDB", "Offline", "ServiceWorker"],
-        "status": "matched",
-        "urgency": "High",
-    },
-    {
-        "title": "Understanding Big-O space complexity in Depth-First Search",
-        "description": "If a graph has V vertices and E edges, is the DFS space complexity O(V) or O(V + E) when using an adjacency list vs call stack?",
-        "transcript": "What is the exact space complexity of depth first search recursion when counting stack frames versus visited sets?",
-        "category": "Computer Science / Algorithms",
-        "tags": ["Algorithms", "BigO", "GraphTheory", "DFS"],
-        "status": "pending",
-        "urgency": "Standard",
+        "answer": "Focus your thesis on mercantilist trade restrictions (Navigation Acts) and direct taxation without representation (Stamp Act, Townshend Acts)."
     }
 ]
 
@@ -223,21 +207,21 @@ def generate_mock_384d_embedding(seed_str: str = "") -> List[float]:
 # -----------------------------------------------------------------------------
 
 STUDENT_TEMPLATES = [
-    {"name": "Rahul Kumar", "email": "rahul.k@student.shiftingorbits.org", "stage": "Grade 10 (Secondary Boards)", "interests": ["Web Development", "Mathematics", "Robotics"]},
-    {"name": "Ananya Patel", "email": "ananya.p@student.shiftingorbits.org", "stage": "Grade 12 (College Prep & Boards)", "interests": ["Biology", "Python", "Biostatistics"]},
-    {"name": "Amit Verma", "email": "amit.v@student.shiftingorbits.org", "stage": "Grade 9 (Early High School)", "interests": ["Computer Hardware", "Networking Basics", "General Science"]},
-    {"name": "Sneha Roy", "email": "sneha.r@student.shiftingorbits.org", "stage": "College 1st Year (Freshman)", "interests": ["PyTorch", "Linear Algebra", "Computer Vision"]},
-    {"name": "Vikram Singh", "email": "vikram.s@student.shiftingorbits.org", "stage": "Grade 11 (Senior Secondary)", "interests": ["Data Analysis", "Calculus", "Python"]},
-    {"name": "Pooja Nair", "email": "pooja.n@student.shiftingorbits.org", "stage": "Grade 10 (Secondary Boards)", "interests": ["JavaScript", "Science", "English Communication"]},
-    {"name": "Deepa Mehta", "email": "deepa.m@student.shiftingorbits.org", "stage": "Grade 12 (College Prep & Boards)", "interests": ["Cybersecurity", "Linux", "Computer Networks"]},
-    {"name": "Rohit Gupta", "email": "rohit.g@student.shiftingorbits.org", "stage": "Grade 11 (Senior Secondary)", "interests": ["Docker", "AWS Basics", "Physics"]},
-    {"name": "Kavita Joshi", "email": "kavita.j@student.shiftingorbits.org", "stage": "Grade 8 (Middle School)", "interests": ["Environmental Science", "Mathematics", "Scratch Coding"]},
-    {"name": "Tarun Sharma", "email": "tarun.s@student.shiftingorbits.org", "stage": "College 2nd Year (Undergraduate)", "interests": ["Dynamic Programming", "Graph Theory", "C++ STL"]},
-    {"name": "Ritu Desai", "email": "ritu.d@student.shiftingorbits.org", "stage": "Grade 12 (College Prep & Boards)", "interests": ["Coordinate Geometry", "Calculus", "Physics Mechanics"]},
-    {"name": "Sameer Khan", "email": "sameer.k@student.shiftingorbits.org", "stage": "Grade 10 (Secondary Boards)", "interests": ["SQL Basics", "Information Technology", "Science"]},
-    {"name": "Sunita Devi", "email": "sunita.d@student.shiftingorbits.org", "stage": "Grade 11 (Senior Secondary)", "interests": ["Anatomy", "Physiology", "First Aid"]},
-    {"name": "Manoj Yadav", "email": "manoj.y@student.shiftingorbits.org", "stage": "Grade 9 (Early High School)", "interests": ["Digital Media", "English", "Graphic Design"]},
-    {"name": "Divya Rani", "email": "divya.r@student.shiftingorbits.org", "stage": "College 1st Year (Freshman)", "interests": ["Financial Accounting", "Excel Modeling", "Economics"]},
+    {"name": "Rahul Kumar", "email": "rahul.k@student.shiftingorbits.org", "stage": "Grade 10 (Secondary Boards)", "interests": ["Physics", "Chemistry", "Algebra"]},
+    {"name": "Ananya Patel", "email": "ananya.p@student.shiftingorbits.org", "stage": "Grade 12 (College Prep & Boards)", "interests": ["Biology", "Chemistry", "Genetics"]},
+    {"name": "Amit Verma", "email": "amit.v@student.shiftingorbits.org", "stage": "Grade 9 (Early High School)", "interests": ["Geometry", "Physics", "Algebra"]},
+    {"name": "Sneha Roy", "email": "sneha.r@student.shiftingorbits.org", "stage": "Grade 12 (Senior High School)", "interests": ["Biology", "Chemistry", "Cell Energetics"]},
+    {"name": "Vikram Singh", "email": "vikram.s@student.shiftingorbits.org", "stage": "Grade 11 (Senior Secondary)", "interests": ["Calculus", "Algebra", "Physics"]},
+    {"name": "Pooja Nair", "email": "pooja.n@student.shiftingorbits.org", "stage": "Grade 10 (Secondary Boards)", "interests": ["Chemistry", "World History", "Biology"]},
+    {"name": "Deepa Mehta", "email": "deepa.m@student.shiftingorbits.org", "stage": "Grade 12 (College Prep & Boards)", "interests": ["Physics", "Kinematics", "Trigonometry"]},
+    {"name": "Rohit Gupta", "email": "rohit.g@student.shiftingorbits.org", "stage": "Grade 11 (Senior Secondary)", "interests": ["Chemistry", "Physics", "Algebra"]},
+    {"name": "Kavita Joshi", "email": "kavita.j@student.shiftingorbits.org", "stage": "Grade 8 (Middle School)", "interests": ["Biology", "Environmental Science", "General Science"]},
+    {"name": "Tarun Sharma", "email": "tarun.s@student.shiftingorbits.org", "stage": "Grade 12 (Senior High School)", "interests": ["Geometry", "Trigonometry", "Algebra"]},
+    {"name": "Ritu Desai", "email": "ritu.d@student.shiftingorbits.org", "stage": "Grade 12 (College Prep & Boards)", "interests": ["Geometry", "Calculus", "Physics"]},
+    {"name": "Sameer Khan", "email": "sameer.k@student.shiftingorbits.org", "stage": "Grade 10 (Secondary Boards)", "interests": ["World History", "Literature", "Social Studies"]},
+    {"name": "Sunita Devi", "email": "sunita.d@student.shiftingorbits.org", "stage": "Grade 11 (Senior Secondary)", "interests": ["World History", "Literature", "Essay Writing"]},
+    {"name": "Manoj Yadav", "email": "manoj.y@student.shiftingorbits.org", "stage": "Grade 9 (Early High School)", "interests": ["Literature", "English Grammar", "World History"]},
+    {"name": "Divya Rani", "email": "divya.r@student.shiftingorbits.org", "stage": "Grade 12 (Senior High School)", "interests": ["Algebra", "Economics", "Statistics"]},
 ]
 
 def generate_students(count: int = 15) -> List[Dict[str, Any]]:

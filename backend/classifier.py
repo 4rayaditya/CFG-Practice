@@ -14,13 +14,13 @@ from groq import (
 )
 
 VALID_CATEGORIES = [
-    "Frontend",
-    "Backend",
-    "AI/ML",
-    "System Design",
-    "Algorithms",
-    "Career & Projects",
-    "General"
+    "Physics",
+    "Chemistry",
+    "Algebra",
+    "Geometry",
+    "Biology",
+    "World History",
+    "Literature"
 ]
 
 
@@ -31,15 +31,15 @@ class ClassifyDoubtRequest(BaseModel):
         min_length=3,
         max_length=10000,
         description="Raw voice transcript to classify and structure",
-        examples=["I am confused about how to structure state management and useEffect cleanup in React."]
+        examples=["I don't understand how to balance this redox equation in chemistry."]
     )
 
 
 class StructuredDoubt(BaseModel):
     """Structured doubt conforming to the MentorMatch public.doubts schema."""
     title: str = Field(..., description="Concise summary headline (5-10 words)")
-    description: str = Field(..., description="Clear explanation of the technical question or roadblock")
-    category: str = Field(default="General", description="Classified technical category")
+    description: str = Field(..., description="Clear explanation of the academic question or roadblock")
+    category: str = Field(default="Physics", description="Classified academic category")
     tags: List[str] = Field(default_factory=list, description="Array of keyword tags")
     urgency: str = Field(default="Standard", description="Urgency rating: Standard or Urgent")
 
@@ -55,30 +55,32 @@ class ClassifyDoubtResponse(BaseModel):
 def normalize_category(category_str: str) -> str:
     """Normalizes any LLM category response to our strict category taxonomy."""
     cat_lower = (category_str or "").lower().strip()
-    if any(k in cat_lower for k in ["front", "react", "css", "html", "vue", "angular", "ui", "web"]):
-        return "Frontend"
-    if any(k in cat_lower for k in ["back", "fastapi", "express", "node", "django", "flask", "database", "sql", "postgres", "auth", "jwt"]):
-        return "Backend"
-    if any(k in cat_lower for k in ["ai", "ml", "machine learning", "nlp", "whisper", "vector", "embedding", "llm", "deep learning"]):
-        return "AI/ML"
-    if any(k in cat_lower for k in ["system", "architecture", "scale", "microservice", "distributed", "load balancer"]):
-        return "System Design"
-    if any(k in cat_lower for k in ["algo", "data structure", "dp", "dynamic programming", "tree", "graph", "binary", "leetcode", "sorting"]):
-        return "Algorithms"
-    if any(k in cat_lower for k in ["career", "resume", "intern", "interview", "job", "portfolio", "roadmap", "hiring"]):
-        return "Career & Projects"
+    if any(k in cat_lower for k in ["physics", "kinematics", "force", "velocity", "gravity", "motion", "energy", "newton", "optics"]):
+        return "Physics"
+    if any(k in cat_lower for k in ["chem", "redox", "molecule", "reaction", "acid", "base", "stoichiometry", "bond", "atom"]):
+        return "Chemistry"
+    if any(k in cat_lower for k in ["algebra", "calculus", "equation", "derivative", "chain rule", "polynomial", "integral", "limit", "matrix"]):
+        return "Algebra"
+    if any(k in cat_lower for k in ["geometry", "trigonometric", "trigonometry", "triangle", "circle", "angle", "proof", "hypotenuse"]):
+        return "Geometry"
+    if any(k in cat_lower for k in ["biology", "cell", "photosynthesis", "respiration", "genetics", "dna", "gene", "organism"]):
+        return "Biology"
+    if any(k in cat_lower for k in ["history", "revolution", "war", "empire", "century", "historical", "civilization"]):
+        return "World History"
+    if any(k in cat_lower for k in ["literature", "essay", "thesis", "novel", "poem", "shakespeare", "reading", "grammar"]):
+        return "Literature"
     
     # Direct match check
     for valid in VALID_CATEGORIES:
         if valid.lower() in cat_lower:
             return valid
-    return "General"
+    return "Physics"
 
 
 def normalize_urgency(urgency_str: str, transcript: str) -> str:
     """Evaluates urgency against strict 'Standard' or 'Urgent' schema."""
     combined = f"{urgency_str} {transcript}".lower()
-    if any(k in combined for k in ["urgent", "asap", "emergency", "broken in production", "deadline today", "critical", "blocking"]):
+    if any(k in combined for k in ["urgent", "asap", "emergency", "test tomorrow", "exam tomorrow", "critical", "blocking"]):
         return "Urgent"
     return "Standard"
 
@@ -90,32 +92,37 @@ def fallback_rule_based_classifier(transcript: str) -> StructuredDoubt:
     text_lower = transcript.lower()
     
     # 1. Determine Category
-    category = "General"
+    category = "Physics"
     tags = []
     
-    if any(k in text_lower for k in ["react", "frontend", "css", "tailwind", "ui", "component", "state", "useeffect", "vite", "html", "javascript", "typescript"]):
-        category = "Frontend"
-        tags.extend(["frontend", "react", "ui-development"])
-    elif any(k in text_lower for k in ["database", "sql", "postgres", "backend", "fastapi", "api", "auth", "jwt", "server", "endpoint", "supabase"]):
-        category = "Backend"
-        tags.extend(["backend", "database", "api-architecture"])
-    elif any(k in text_lower for k in ["algorithm", "memoization", "dp", "dynamic programming", "graph", "tree", "binary search", "recursion", "time complexity"]):
-        category = "Algorithms"
-        tags.extend(["algorithms", "data-structures", "problem-solving"])
-    elif any(k in text_lower for k in ["whisper", "groq", "ai", "machine learning", "embedding", "vector", "openai", "llama", "model", "pgvector"]):
-        category = "AI/ML"
-        tags.extend(["ai-ml", "speech-recognition", "embeddings"])
-    elif any(k in text_lower for k in ["resume", "internship", "career", "portfolio", "interview", "project"]):
-        category = "Career & Projects"
-        tags.extend(["career-guidance", "internships", "portfolio"])
+    if any(k in text_lower for k in ["physics", "kinematics", "force", "acceleration", "velocity", "motion", "gravity", "energy"]):
+        category = "Physics"
+        tags.extend(["physics", "kinematics", "science"])
+    elif any(k in text_lower for k in ["chemistry", "chem", "redox", "oxidation", "reduction", "molecule", "reaction", "acid", "base"]):
+        category = "Chemistry"
+        tags.extend(["chemistry", "redox-reactions", "science"])
+    elif any(k in text_lower for k in ["algebra", "calculus", "chain rule", "derivative", "equation", "integral", "limit"]):
+        category = "Algebra"
+        tags.extend(["algebra", "calculus", "mathematics"])
+    elif any(k in text_lower for k in ["geometry", "trigonometry", "triangle", "circle", "angle", "proof", "vectors"]):
+        category = "Geometry"
+        tags.extend(["geometry", "trigonometry", "mathematics"])
+    elif any(k in text_lower for k in ["biology", "cell", "photosynthesis", "respiration", "genetics", "dna", "organism"]):
+        category = "Biology"
+        tags.extend(["biology", "cell-biology", "science"])
+    elif any(k in text_lower for k in ["history", "revolution", "war", "empire", "historical", "century"]):
+        category = "World History"
+        tags.extend(["world-history", "social-studies", "history"])
+    elif any(k in text_lower for k in ["literature", "essay", "thesis", "poem", "novel", "reading", "grammar"]):
+        category = "Literature"
+        tags.extend(["literature", "essay-writing", "english"])
     else:
-        tags.extend(["general-doubt", "mentorship"])
+        tags.extend(["academic-doubt", "mentorship"])
 
     # Extract additional keyword tags
     words = re.findall(r"\b[a-zA-Z]{4,}\b", transcript.lower())
     extra_keywords = [w for w in words if w not in ["that", "with", "from", "have", "this", "need", "help", "about", "what", "how", "when", "some", "getting"]][:3]
     tags.extend(extra_keywords)
-    # Deduplicate tags
     unique_tags = list(dict.fromkeys(tags))[:5]
 
     # 2. Extract Title (max 10 words)
@@ -125,10 +132,7 @@ def fallback_rule_based_classifier(transcript: str) -> StructuredDoubt:
     else:
         title = " ".join(words[:8]).rstrip(",.!?") + "..."
 
-    # Capitalize title
-    title = title[0].upper() + title[1:] if title else "Technical Mentorship Query"
-
-    # 3. Urgency
+    title = title[0].upper() + title[1:] if title else "Academic Mentorship Query"
     urgency = normalize_urgency("Standard", transcript)
 
     return StructuredDoubt(

@@ -110,32 +110,32 @@ export const Login: React.FC = () => {
 
   return (
     <div className="max-w-xl mx-auto py-8 px-4">
-      <div className="bg-white p-8 sm:p-10 rounded-3xl border border-slate-200 shadow-xl space-y-6">
+      <div className="bg-white p-8 sm:p-10 rounded-2xl border border-slate-200 shadow-sm space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-600 via-indigo-600 to-emerald-500 mx-auto flex items-center justify-center shadow-md shadow-sky-600/20 mb-3">
-            <Heart className="w-6 h-6 text-white fill-white/20" />
+          <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-200 mx-auto flex items-center justify-center mb-3">
+            <GraduationCap className="w-6 h-6 text-teal-700" />
           </div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
-            <span>NGO Field &amp; Cradle-to-College Network</span>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-teal-50 text-teal-800 border border-teal-200">
+            <span>High School Learning &amp; Mentorship Network</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900">
-            {authMode === 'signin' ? 'Shifting Orbits Platform' : 'Join Shifting Orbits'}
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
+            {authMode === 'signin' ? 'Welcome Back' : 'Join Our Learning Community'}
           </h1>
           <p className="text-xs text-slate-500">
             {authMode === 'signin'
-              ? 'Empowering underprivileged students from cradle to college with targeted mentorship'
-              : 'Create an account to join as a scholar or volunteer mentor'}
+              ? 'Connect with supportive teachers and mentors for academic guidance'
+              : 'Create an account to ask questions and receive step-by-step help'}
           </p>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+        <div className="flex bg-slate-100 p-1.5 rounded-xl border border-slate-200">
           <button
             type="button"
             onClick={() => { setAuthMode('signin'); setErrorMsg(null); setSuccessMsg(null); }}
-            className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
-              authMode === 'signin' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
+            className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${
+              authMode === 'signin' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             Sign In
@@ -143,8 +143,8 @@ export const Login: React.FC = () => {
           <button
             type="button"
             onClick={() => { setAuthMode('signup'); setErrorMsg(null); setSuccessMsg(null); }}
-            className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
-              authMode === 'signup' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
+            className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${
+              authMode === 'signup' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             Create Account
@@ -170,47 +170,47 @@ export const Login: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Role Cards */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-              {authMode === 'signin' ? 'Portal Persona' : 'I want to join as a'}
+            <label className="block text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wider">
+              {authMode === 'signin' ? 'Select Role' : 'I want to join as'}
             </label>
             <div className="grid grid-cols-3 gap-2.5">
               <button
                 type="button"
                 onClick={() => handleQuickFill('student')}
-                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition text-xs text-center ${
+                className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition text-xs text-center ${
                   selectedRole === 'student'
-                    ? 'bg-sky-50 border-sky-500 text-sky-800 ring-2 ring-sky-500/10 font-bold shadow-xs'
+                    ? 'bg-teal-50 border-teal-600 text-teal-900 font-semibold shadow-xs'
                     : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                 }`}
               >
-                <GraduationCap className={`w-5 h-5 ${selectedRole === 'student' ? 'text-sky-600' : 'text-slate-400'}`} />
-                <span>Scholar</span>
+                <GraduationCap className={`w-5 h-5 ${selectedRole === 'student' ? 'text-teal-700' : 'text-slate-400'}`} />
+                <span>Student</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleQuickFill('mentor')}
-                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition text-xs text-center ${
+                className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition text-xs text-center ${
                   selectedRole === 'mentor'
-                    ? 'bg-emerald-50 border-emerald-500 text-emerald-800 ring-2 ring-emerald-500/10 font-bold shadow-xs'
+                    ? 'bg-emerald-50 border-emerald-600 text-emerald-900 font-semibold shadow-xs'
                     : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                 }`}
               >
                 <Users className={`w-5 h-5 ${selectedRole === 'mentor' ? 'text-emerald-600' : 'text-slate-400'}`} />
-                <span>Mentor</span>
+                <span>Teacher / Mentor</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleQuickFill('admin')}
-                className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition text-xs text-center ${
+                className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition text-xs text-center ${
                   selectedRole === 'admin'
-                    ? 'bg-purple-50 border-purple-500 text-purple-800 ring-2 ring-purple-500/10 font-bold shadow-xs'
+                    ? 'bg-slate-100 border-slate-400 text-slate-900 font-semibold shadow-xs'
                     : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                 }`}
               >
-                <Shield className={`w-5 h-5 ${selectedRole === 'admin' ? 'text-purple-600' : 'text-slate-400'}`} />
-                <span>Director</span>
+                <Shield className={`w-5 h-5 ${selectedRole === 'admin' ? 'text-slate-700' : 'text-slate-400'}`} />
+                <span>Admin</span>
               </button>
             </div>
           </div>
@@ -225,7 +225,7 @@ export const Login: React.FC = () => {
                   placeholder="e.g. Rahul Kumar"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:border-sky-500 transition"
+                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:border-teal-600 transition"
                 />
                 <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
               </div>
@@ -241,7 +241,7 @@ export const Login: React.FC = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:border-sky-500 transition"
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:border-teal-600 transition"
               />
               <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
             </div>
@@ -256,7 +256,7 @@ export const Login: React.FC = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:border-sky-500 transition font-mono"
+                className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:border-teal-600 transition font-mono"
               />
               <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
               <button
@@ -274,24 +274,18 @@ export const Login: React.FC = () => {
             type="submit"
             id="btn-submit-auth"
             disabled={loading}
-            className={`w-full py-3 rounded-xl text-white font-extrabold text-sm shadow-md transition flex items-center justify-center gap-2 ${
-              selectedRole === 'mentor'
-                ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20'
-                : selectedRole === 'admin'
-                ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-600/20'
-                : 'bg-sky-600 hover:bg-sky-500 shadow-sky-600/20'
-            } disabled:opacity-50`}
+            className="w-full py-3 rounded-xl text-white font-semibold text-sm shadow-sm transition flex items-center justify-center gap-2 bg-teal-700 hover:bg-teal-800 disabled:opacity-50"
           >
             {loading ? (
               <>
                 <Sparkles className="w-4 h-4 animate-spin" />
-                <span>Authenticating...</span>
+                <span>Signing in...</span>
               </>
             ) : (
               <>
                 <span>
                   {authMode === 'signin'
-                    ? `Sign In to ${selectedRole === 'mentor' ? 'Mentor Board' : selectedRole === 'admin' ? 'Admin Portal' : 'Scholar Portal'}`
+                    ? `Sign In to ${selectedRole === 'mentor' ? 'Teacher Board' : selectedRole === 'admin' ? 'Admin Portal' : 'Student Portal'}`
                     : `Create Account`}
                 </span>
                 <ArrowRight className="w-4 h-4" />

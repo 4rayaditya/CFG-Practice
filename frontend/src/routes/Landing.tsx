@@ -34,49 +34,49 @@ export const Landing: React.FC = () => {
       {/* Hero Section */}
       <section className="relative text-center space-y-6 max-w-4xl mx-auto pt-6 pb-4">
         {/* NGO Impact Pill */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider shadow-xs animate-pulse">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50/80 border border-emerald-200/60 text-emerald-800 text-xs font-semibold uppercase tracking-wider shadow-xs">
           <Heart className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Shifting Orbits — Cradle to College Initiative</span>
+          <span>Shifting Orbits — High School Student Learning Hub</span>
         </div>
 
         {/* Primary Title */}
-        <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-slate-900 leading-tight sm:leading-none">
-          Unified Mentorship &amp; Field Operations for{' '}
-          <span className="bg-gradient-to-r from-sky-600 via-indigo-600 to-emerald-600 bg-clip-text text-transparent">
-            Underprivileged Students
+        <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-800 leading-snug sm:leading-tight">
+          Supportive Mentorship & Academic Help for{' '}
+          <span className="text-teal-700 font-black">
+            High School Students
           </span>
         </h1>
 
         {/* Subtitle */}
-        <p className="text-base sm:text-lg text-slate-600 max-w-3xl mx-auto font-normal leading-relaxed">
-          We built a unified platform to help NGO field teams move away from fragmented tools and identify students who need attention at the right time. Providing holistic support from cradle through college graduation.
+        <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto font-normal leading-relaxed">
+          Ask questions in Physics, Chemistry, Algebra, Geometry, Biology, World History, and Literature. Dedicated mentors and supportive teachers are here to help you learn step-by-step.
         </p>
 
         {/* Call to Action Buttons */}
         <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
           <Link
             to="/login"
-            className="flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-extrabold shadow-lg shadow-sky-600/25 hover:-translate-y-0.5 transition duration-200"
+            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-semibold shadow-sm transition duration-150"
           >
             <LogIn className="w-5 h-5" />
-            <span>Open Demo Portals</span>
+            <span>Student & Teacher Login</span>
             <ArrowRight className="w-4 h-4 ml-1" />
           </Link>
 
           <Link
             to="/mentors"
-            className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 font-bold shadow-xs hover:-translate-y-0.5 transition duration-200"
+            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium shadow-sm transition duration-150"
           >
             <Users className="w-5 h-5 text-emerald-600" />
-            <span>Discover Mentors</span>
+            <span>Meet Our Teachers</span>
           </Link>
 
           <Link
             to="/roadmap"
-            className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition duration-200"
+            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition duration-150"
           >
-            <Compass className="w-5 h-5 text-indigo-600" />
-            <span>Cradle-to-College Tracks</span>
+            <Compass className="w-5 h-5 text-sky-600" />
+            <span>Academic Study Roadmaps</span>
           </Link>
         </div>
 

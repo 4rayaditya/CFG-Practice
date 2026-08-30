@@ -4,192 +4,183 @@ import { api } from '../../services/api';
 import { Compass, Sparkles, Layers, CheckCircle2 } from 'lucide-react';
 
 export const PRESET_CAREER_TRACKS: Record<string, RoadmapData> = {
-  'fullstack-ai': {
-    track_title: 'Full-Stack Modern Web & AI Development Track',
-    summary: 'Master full-stack React 19 architecture, local JWT authentication, Groq Whisper voice intake, and pgvector semantic mentor matching.',
-    total_estimated_hours: 115,
-    skill_level: 'Intermediate',
+  'physics-mastery': {
+    track_title: 'AP Physics & Kinematics Mastery Track',
+    summary: 'Master High School Physics, Kinematics equations, Newton\'s laws of motion, Work-Energy theorem, and lab experiment analysis.',
+    total_estimated_hours: 90,
+    skill_level: 'Grade 10-12',
     target_timeline: '3 months',
     milestones: [
       {
         id: 1,
-        title: 'Phase 1: React 19, TypeScript & Web Audio Intake',
-        description: 'Master typed React component design, Tailwind CSS styling tokens, and HTML5 Web Audio API waveform visualization.',
-        estimated_hours: 35,
+        title: 'Phase 1: Kinematics & Motion Vectors',
+        description: 'Understand displacement, velocity, acceleration, and 2D projectile motion decomposition.',
+        estimated_hours: 25,
         subtasks: [
-          'Create accessible glassmorphic UI cards with micro-animations',
-          'Implement MediaRecorder audio stream capture and canvas waveform spectrum',
-          'Enforce role-based layout redirects and 403 authorization boundaries',
+          'Master 1D uniform acceleration equations (v = u + at, s = ut + 0.5at^2)',
+          'Decompose 2D projectile vectors into horizontal and vertical components',
+          'Calculate total kinetic and potential energy at peak trajectory',
         ],
         resources: [
-          { name: 'React Official Documentation', url: 'https://react.dev', type: 'docs' },
-          { name: 'MDN Web Audio API Guide', url: 'https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API', type: 'docs' },
-          { name: 'Tailwind CSS Documentation', url: 'https://tailwindcss.com/docs', type: 'docs' },
+          { name: 'Physics OpenStax Textbook', url: 'https://openstax.org', type: 'docs' },
+          { name: 'PhET Motion Interactive Labs', url: 'https://phet.colorado.edu', type: 'tutorial' },
         ],
-        checkpoint_project: 'Voice Intake Audio Recorder component with live animated spectrum canvas.',
-        key_skills: ['React 19', 'TypeScript', 'Tailwind CSS', 'Web Audio API'],
+        checkpoint_project: 'Complete Projectile Motion Problem Set and Lab Report.',
+        key_skills: ['Kinematics', 'Vectors', 'Projectile Motion', 'Energy Balances'],
       },
       {
         id: 2,
-        title: 'Phase 2: FastAPI Backend & Local JWT Verification',
-        description: 'Build asynchronous REST API services with local HS256 JWT signature verification and role guards.',
-        estimated_hours: 35,
-        subtasks: [
-          'Set up FastAPI application with CORS and Pydantic validation',
-          'Implement zero-roundtrip Supabase JWT authentication middleware',
-          'Integrate Groq Whisper API (whisper-large-v3) for speech transcription',
-        ],
-        resources: [
-          { name: 'FastAPI Tutorial', url: 'https://fastapi.tiangolo.com/tutorial/', type: 'docs' },
-          { name: 'Groq Cloud Documentation', url: 'https://console.groq.com/docs', type: 'docs' },
-          { name: 'PyJWT Documentation', url: 'https://pyjwt.readthedocs.io', type: 'docs' },
-        ],
-        checkpoint_project: 'Secure FastAPI backend service with role guards and audio transcription endpoint.',
-        key_skills: ['FastAPI', 'JWT Auth', 'Groq Whisper', 'Pydantic', 'Python'],
-      },
-      {
-        id: 3,
-        title: 'Phase 3: Vector Embeddings, Mentor Matching & PWA Offline Sync',
-        description: 'Connect pgvector similarity search, Groq Llama 3 classification, and service worker background sync.',
-        estimated_hours: 45,
-        subtasks: [
-          'Implement 384-dimensional query embedding generation with all-MiniLM-L6-v2',
-          'Create Supabase match_mentors RPC function for Cosine similarity search',
-          'Configure PWA manifest and offline IndexedDB voice query caching',
-        ],
-        resources: [
-          { name: 'Supabase pgvector Docs', url: 'https://supabase.com/docs/guides/ai', type: 'docs' },
-          { name: 'pgvector GitHub Repository', url: 'https://github.com/pgvector/pgvector', type: 'github' },
-          { name: 'Vite PWA Plugin Guide', url: 'https://vite-pwa-org.netlify.app', type: 'docs' },
-        ],
-        checkpoint_project: 'Full-Stack MentorMatch AI platform with offline audio sync and live mentor matching.',
-        key_skills: ['pgvector', 'HNSW Indexes', 'PWA', 'IndexedDB', 'Supabase'],
-      },
-    ],
-  },
-  'backend-systems': {
-    track_title: 'Backend & Distributed Systems Architect Track',
-    summary: 'Master asynchronous Python, PostgreSQL database optimization, microservices, connection pooling, and high-throughput APIs.',
-    total_estimated_hours: 130,
-    skill_level: 'Advanced',
-    target_timeline: '4 months',
-    milestones: [
-      {
-        id: 1,
-        title: 'Phase 1: Asynchronous FastAPI & Relational PostgreSQL',
-        description: 'Architect RESTful APIs with SQLAlchemy async engine, Alembic migrations, and connection pooling.',
-        estimated_hours: 40,
-        subtasks: [
-          'Design relational schemas with UUIDs, foreign keys, and cascading triggers',
-          'Implement JWT authentication with role-based claim authorization',
-          'Configure slowapi rate limiting with client IP proxy headers',
-        ],
-        resources: [
-          { name: 'FastAPI SQL Databases', url: 'https://fastapi.tiangolo.com/tutorial/sql-databases/', type: 'docs' },
-          { name: 'PostgreSQL Official Docs', url: 'https://www.postgresql.org/docs/', type: 'docs' },
-        ],
-        checkpoint_project: 'High-throughput REST API with ACID transactions and JWT verification.',
-        key_skills: ['FastAPI', 'PostgreSQL', 'SQLAlchemy', 'Alembic'],
-      },
-      {
-        id: 2,
-        title: 'Phase 2: Vector Search & High-Concurrency Caching',
-        description: 'Implement pgvector HNSW indexing, Redis distributed caching, and WebSocket pub/sub broadcasting.',
-        estimated_hours: 45,
-        subtasks: [
-          'Deploy pgvector extension with cosine distance indexes',
-          'Implement Redis cache layers for expensive semantic searches',
-          'Build real-time WebSocket channels for live event streaming',
-        ],
-        resources: [
-          { name: 'Redis Documentation', url: 'https://redis.io/docs/', type: 'docs' },
-          { name: 'pgvector Indexing Guide', url: 'https://github.com/pgvector/pgvector#indexing', type: 'github' },
-        ],
-        checkpoint_project: 'Real-time pub/sub notification engine with cached vector lookups.',
-        key_skills: ['Redis', 'pgvector', 'WebSockets', 'Concurrency'],
-      },
-      {
-        id: 3,
-        title: 'Phase 3: Microservices & Cloud Observability',
-        description: 'Docker containerization, Prometheus metrics, structured JSON logging, and deployment automation.',
-        estimated_hours: 45,
-        subtasks: [
-          'Containerize services with multi-stage Docker builds',
-          'Set up health check telemetry and Prometheus metrics endpoints',
-          'Configure CI/CD pipelines with automated test suites',
-        ],
-        resources: [
-          { name: 'Docker Documentation', url: 'https://docs.docker.com/', type: 'docs' },
-          { name: 'Prometheus FastAPI Guide', url: 'https://prometheus.io/docs/', type: 'docs' },
-        ],
-        checkpoint_project: 'Containerized microservices cluster with telemetry dashboards.',
-        key_skills: ['Docker', 'Prometheus', 'CI/CD', 'Telemetry'],
-      },
-    ],
-  },
-  'algorithms-dsa': {
-    track_title: 'Algorithms & Competitive Problem Solving Track',
-    summary: 'Master dynamic programming state transitions, graph traversal, trees, and algorithmic optimization techniques.',
-    total_estimated_hours: 100,
-    skill_level: 'Intermediate',
-    target_timeline: '8 weeks',
-    milestones: [
-      {
-        id: 1,
-        title: 'Phase 1: Dynamic Programming Memoization & Tabulation',
-        description: 'Master 1D and 2D dynamic programming, knapsack variants, grid paths, and recurrence relations.',
-        estimated_hours: 35,
-        subtasks: [
-          'Implement top-down memoization vs bottom-up tabulation',
-          'Solve minimum path sum and longest common subsequence',
-          'Analyze asymptotic time and space complexity trade-offs',
-        ],
-        resources: [
-          { name: 'LeetCode DP Study Plan', url: 'https://leetcode.com', type: 'tutorial' },
-          { name: 'GeeksforGeeks DP Guide', url: 'https://geeksforgeeks.org', type: 'docs' },
-        ],
-        checkpoint_project: 'Comprehensive DP pattern cheatsheet and solutions repository.',
-        key_skills: ['Dynamic Programming', 'Memoization', 'Complexity Analysis'],
-      },
-      {
-        id: 2,
-        title: 'Phase 2: Graph Algorithms & Tree Traversal',
-        description: 'Master BFS, DFS, Dijkstra shortest path, union-find, and topological sorting.',
-        estimated_hours: 35,
-        subtasks: [
-          'Implement graph adjacency lists and bipartite graph detection',
-          'Build shortest path algorithms with priority queues (Dijkstra/A*)',
-          'Solve lowest common ancestor and tree serialization',
-        ],
-        resources: [
-          { name: 'CP-Algorithms Guide', url: 'https://cp-algorithms.com', type: 'docs' },
-        ],
-        checkpoint_project: 'Interactive Graph Traversal & Shortest Path Visualizer.',
-        key_skills: ['Graphs', 'Trees', 'BFS/DFS', 'Dijkstra'],
-      },
-      {
-        id: 3,
-        title: 'Phase 3: Advanced Data Structures & Mock Interviews',
-        description: 'Segment trees, Fenwick trees, tries, monotonic stacks, and live mock coding sessions.',
+        title: 'Phase 2: Newton\'s Laws & Dynamics',
+        description: 'Explore free-body diagrams, friction forces, centripetal acceleration, and momentum conservation.',
         estimated_hours: 30,
         subtasks: [
-          'Implement Trie for autocomplete and prefix search',
-          'Solve monotonic queue and sliding window maximum challenges',
-          'Complete 3 full-length timed mock technical interviews',
+          'Draw accurate free-body force diagrams for inclined planes',
+          'Apply F = ma to multi-body pulley systems',
+          'Calculate impulse and momentum conservation in elastic collisions',
         ],
         resources: [
-          { name: 'NeetCode Roadmap', url: 'https://neetcode.io', type: 'tutorial' },
+          { name: 'Khan Academy Physics', url: 'https://khanacademy.org', type: 'tutorial' },
         ],
-        checkpoint_project: 'FAANG Technical Interview Preparation Portfolio.',
-        key_skills: ['Trie', 'Monotonic Stack', 'Systematic Problem Solving'],
+        checkpoint_project: 'Newtonian Mechanics Problem Solving Portfolio.',
+        key_skills: ['Newton\'s Laws', 'Free-Body Diagrams', 'Momentum', 'Friction'],
+      },
+      {
+        id: 3,
+        title: 'Phase 3: Work, Energy & AP Physics Board Prep',
+        description: 'Master work-energy theorem, conservation of mechanical energy, and comprehensive board exam review.',
+        estimated_hours: 35,
+        subtasks: [
+          'Derive work done by constant and variable forces',
+          'Solve mechanical energy conservation for simple harmonic motion',
+          'Complete 3 full-length timed physics practice board exams',
+        ],
+        resources: [
+          { name: 'AP Physics Practice Portal', url: 'https://apcentral.collegeboard.org', type: 'docs' },
+        ],
+        checkpoint_project: 'Final AP Physics Board Exam Review Mastery.',
+        key_skills: ['Work-Energy Theorem', 'Simple Harmonic Motion', 'Board Exam Review'],
+      },
+    ],
+  },
+  'calculus-foundations': {
+    track_title: 'Algebra & Calculus Foundations Track',
+    summary: 'Master algebraic functions, trigonometric identities, limits, derivatives, chain rule, and integral calculus.',
+    total_estimated_hours: 100,
+    skill_level: 'Grade 11-12',
+    target_timeline: '3 months',
+    milestones: [
+      {
+        id: 1,
+        title: 'Phase 1: Advanced Algebra & Trigonometry',
+        description: 'Master quadratic equations, polynomial factoring, and trigonometric identities.',
+        estimated_hours: 30,
+        subtasks: [
+          'Solve quadratic equations by factoring, completing square, and formula',
+          'Derive fundamental trigonometric identities (sin^2 + cos^2 = 1)',
+          'Plot polynomial and rational functions with vertical/horizontal asymptotes',
+        ],
+        resources: [
+          { name: 'Paul\'s Online Math Notes', url: 'https://tutorial.math.lamar.edu', type: 'docs' },
+        ],
+        checkpoint_project: 'Trigonometry & Polynomial Algebra Workbook.',
+        key_skills: ['Algebra', 'Trigonometry', 'Polynomials', 'Asymptotes'],
+      },
+      {
+        id: 2,
+        title: 'Phase 2: Differential Calculus & Chain Rule',
+        description: 'Master limits, derivative definition, product rule, quotient rule, and chain rule for composite functions.',
+        estimated_hours: 35,
+        subtasks: [
+          'Understand limit definition of derivative f\'(x)',
+          'Apply Chain Rule to composite functions like sin(3x^2 + 5)',
+          'Find local maxima, minima, and points of inflection using 1st and 2nd derivatives',
+        ],
+        resources: [
+          { name: 'MIT OpenCourseWare Calculus', url: 'https://ocw.mit.edu', type: 'docs' },
+        ],
+        checkpoint_project: 'Calculus Derivatives & Curve Sketching Project.',
+        key_skills: ['Limits', 'Derivatives', 'Chain Rule', 'Optimization'],
+      },
+      {
+        id: 3,
+        title: 'Phase 3: Integral Calculus & Applications',
+        description: 'Understand indefinite and definite integrals, substitution method, and area under curves.',
+        estimated_hours: 35,
+        subtasks: [
+          'Evaluate antiderivatives and u-substitution techniques',
+          'Calculate definite integrals using Fundamental Theorem of Calculus',
+          'Determine area between two intersecting curves',
+        ],
+        resources: [
+          { name: 'Khan Academy Calculus', url: 'https://khanacademy.org', type: 'tutorial' },
+        ],
+        checkpoint_project: 'Integration & Area Applications Problem Set.',
+        key_skills: ['Integrals', 'U-Substitution', 'Definite Integrals', 'Area Calculation'],
+      },
+    ],
+  },
+  'chemistry-biology': {
+    track_title: 'Chemistry & Biology Lab Sciences Track',
+    summary: 'Master atomic structure, chemical stoichiometry, redox equations, cellular energetics, and genetics.',
+    total_estimated_hours: 95,
+    skill_level: 'Grade 10-12',
+    target_timeline: '3 months',
+    milestones: [
+      {
+        id: 1,
+        title: 'Phase 1: Atomic Structure & Chemical Bonding',
+        description: 'Understand electron configurations, periodic trends, ionic and covalent bonding.',
+        estimated_hours: 30,
+        subtasks: [
+          'Write s, p, d electron configurations for periodic elements',
+          'Draw Lewis dot structures and predict VSEPR molecular geometry',
+          'Calculate molar mass and perform stoichiometric mole conversions',
+        ],
+        resources: [
+          { name: 'ChemLibreTexts', url: 'https://chem.libretexts.org', type: 'docs' },
+        ],
+        checkpoint_project: 'Chemical Bonding & Stoichiometry Lab Workbook.',
+        key_skills: ['Atomic Structure', 'Lewis Structures', 'Stoichiometry', 'Molar Mass'],
+      },
+      {
+        id: 2,
+        title: 'Phase 2: Redox Reactions & Electrochemistry',
+        description: 'Balance oxidation-reduction half-reactions in acidic and basic solutions.',
+        estimated_hours: 30,
+        subtasks: [
+          'Assign oxidation states to atoms in complex molecules',
+          'Balance half-reactions using H+ and H2O balancing steps',
+          'Calculate standard cell potential for galvanic cells',
+        ],
+        resources: [
+          { name: 'CrashCourse Chemistry', url: 'https://youtube.com', type: 'tutorial' },
+        ],
+        checkpoint_project: 'Redox Equation Balancing & Electrochemistry Portfolio.',
+        key_skills: ['Redox', 'Oxidation Numbers', 'Half-Reactions', 'Galvanic Cells'],
+      },
+      {
+        id: 3,
+        title: 'Phase 3: Cellular Energetics & Genetics',
+        description: 'Explore photosynthesis, cellular respiration, DNA replication, and Mendelian inheritance.',
+        estimated_hours: 35,
+        subtasks: [
+          'Compare reactants and products of photosynthesis vs cellular respiration',
+          'Trace ATP generation through glycolysis, Krebs cycle, and electron transport',
+          'Solve Punnett square genetics problems for mono and dihybrid crosses',
+        ],
+        resources: [
+          { name: 'Bozeman Science Biology', url: 'https://bozemanscience.com', type: 'tutorial' },
+        ],
+        checkpoint_project: 'Cellular Biology & Genetics Synthesis Presentation.',
+        key_skills: ['Cellular Respiration', 'Photosynthesis', 'Genetics', 'DNA Replication'],
       },
     ],
   },
 };
 
 export const CareerRoadmap: React.FC = () => {
-  const [selectedTrackKey, setSelectedTrackKey] = useState<string>('fullstack-ai');
-  const [currentRoadmap, setCurrentRoadmap] = useState<RoadmapData>(PRESET_CAREER_TRACKS['fullstack-ai']);
+  const [selectedTrackKey, setSelectedTrackKey] = useState<string>('physics-mastery');
+  const [currentRoadmap, setCurrentRoadmap] = useState<RoadmapData>(PRESET_CAREER_TRACKS['physics-mastery']);
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Load existing student roadmaps from backend on mount
