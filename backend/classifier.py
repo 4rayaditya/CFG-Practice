@@ -4,7 +4,14 @@ import re
 import time
 from typing import List, Optional
 from pydantic import BaseModel, Field
-from groq import Groq, GroqError
+from groq import (
+    Groq,
+    GroqError,
+    RateLimitError,
+    APITimeoutError,
+    APIConnectionError,
+    APIStatusError
+)
 
 VALID_CATEGORIES = [
     "Frontend",
@@ -133,10 +140,11 @@ def fallback_rule_based_classifier(transcript: str) -> StructuredDoubt:
     )
 
 
-def classify_transcript(transcript: str) -> StructuredDoubt:
+def classify_transcript(transcript: str, timeout_seconds: float = 10.0) -> StructuredDoubt:
     """
-    Main classifier function: Calls Groq Llama 3 (llama-3.3-70b-versatile) with strict JSON mode,
-    falling back seamlessly to rule-based NLP if the API key is not configured or fails.
+    Main classifier function: Calls Groq Llama 3 (llama-3.3-70b-versatile) with strict JSON mode
+    and an explicit 10-second timeout, falling back seamlessly to rule-based NLP if the API key
+    is not configured or fails.
     """
     cleaned_transcript = (transcript or "").strip()
     if not cleaned_transcript:
@@ -152,7 +160,7 @@ def classify_transcript(transcript: str) -> StructuredDoubt:
 
     if groq_key and not groq_key.startswith("gsk_your"):
         try:
-            client = Groq(api_key=groq_key)
+            client = Groq(api_key=groq_key, timeout=timeout_seconds)
             
             system_prompt = (
                 "You are an expert AI mentor and question classifier for MentorMatch AI. "
@@ -200,7 +208,7 @@ def classify_transcript(transcript: str) -> StructuredDoubt:
                 urgency=urgency
             )
 
-        except (GroqError, json.JSONDecodeError, Exception) as exc:
+        except (RateLimitError, APITimeoutError, APIConnectionError, APIStatusError, GroqError, json.JSONDecodeError, Exception) as exc:
             # Resilient fallback to rule-based classification
             print(f"[WARN] Groq LLM classification fallback engaged: {exc}")
             return fallback_rule_based_classifier(cleaned_transcript)

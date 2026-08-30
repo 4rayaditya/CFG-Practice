@@ -3,11 +3,24 @@ import os
 import time
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
-from fastapi import FastAPI, Depends, UploadFile, File, HTTPException, status
+from fastapi import FastAPI, Depends, UploadFile, File, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
-from groq import Groq, GroqError
+from groq import (
+    Groq,
+    GroqError,
+    RateLimitError,
+    APITimeoutError,
+    APIConnectionError,
+    APIStatusError,
+)
+
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from auth import get_current_user, require_role, AuthenticatedUser
 from classifier import (
@@ -73,11 +86,21 @@ class AudioProcessingResponse(BaseModel):
     user_role: str
 
 
+# -----------------------------------------------------------------------------
+# Rate Limiting Configuration (SlowAPI & Starlette Middleware)
+# -----------------------------------------------------------------------------
+limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
+
 app = FastAPI(
     title="MentorMatch AI API",
-    description="Backend API with local Supabase JWT verification, Groq Whisper (whisper-large-v3) speech transcription, Groq Llama 3 doubt classification, and Role-Based Access Control",
+    description="Backend API with local Supabase JWT verification, Groq Whisper (whisper-large-v3) speech transcription, Groq Llama 3 doubt classification, Rate Limiting (SlowAPI), and Role-Based Access Control",
     version="1.0.0"
 )
+
+# Bind SlowAPI state and exception handler
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # CORS Configuration
 frontend_url = os.getenv("FRONTEND_URL", "https://cfg-practice.vercel.app")
@@ -101,7 +124,7 @@ app.add_middleware(
 
 
 @app.get("/")
-def read_root():
+def read_root(request: Request):
     return {
         "message": "MentorMatch AI API is running",
         "docs": "/docs",
@@ -110,13 +133,14 @@ def read_root():
 
 
 @app.get("/api/health")
-def health_check():
+def health_check(request: Request):
     groq_configured = bool(os.getenv("GROQ_API_KEY") and not os.getenv("GROQ_API_KEY").startswith("gsk_your"))
     return {
         "status": "healthy",
         "service": "MentorMatch AI Backend",
         "version": "1.0.0",
         "cors_origins": origins,
+        "rate_limiting": "SlowAPI (Enabled: 5/min on /api/process-audio)",
         "auth_middleware": "Supabase JWT (HS256 with Supabase Auth API Fallback)",
         "groq_whisper_configured": groq_configured,
         "groq_llama_classifier_configured": groq_configured
@@ -128,14 +152,17 @@ def health_check():
 # -----------------------------------------------------------------------------
 
 @app.post("/api/process-audio", response_model=AudioProcessingResponse)
+@limiter.limit("5/minute")
 async def process_audio(
+    request: Request,
     file: UploadFile = File(..., description="Multipart audio recording file (.webm, .wav, .mp3, .m4a)"),
     current_user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
     Accepts multipart audio uploads, validates file integrity, authenticates via Supabase JWT,
-    and passes the audio buffer to the free Groq API (whisper-large-v3) for speech transcription.
-    Automatically classifies the transcript into a structured doubt payload.
+    enforces a 5/minute rate limit, and passes the audio buffer to the Groq API (whisper-large-v3)
+    with a 10-second timeout.
+    Catches rate limits, timeouts, and outages to return a structured 503 HTTP response.
     """
     start_time = time.perf_counter()
 
@@ -176,28 +203,57 @@ async def process_audio(
             detail=f"Audio file exceeds maximum size limit of {MAX_FILE_SIZE_BYTES // (1024 * 1024)}MB.",
         )
 
-    # 3. Transcribe with Groq API (whisper-large-v3)
+    # 3. Transcribe with Groq API (whisper-large-v3) with 10-second timeout & 503 fault tolerance
     groq_key = os.getenv("GROQ_API_KEY", "").strip()
     transcript_text = ""
 
     if groq_key and not groq_key.startswith("gsk_your"):
         try:
-            client = Groq(api_key=groq_key)
+            client = Groq(api_key=groq_key, timeout=10.0)
             transcription = client.audio.transcriptions.create(
                 file=(file.filename or f"audio{file_ext}", audio_bytes),
                 model="whisper-large-v3",
                 response_format="json"
             )
             transcript_text = getattr(transcription, "text", str(transcription)).strip()
-        except GroqError as groq_err:
+        except RateLimitError as rl_err:
             raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"Groq Whisper API error: {str(groq_err)}",
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "error": "RATE_LIMIT_EXCEEDED",
+                    "message": "AI speech transcription service rate limit reached. Please wait a few moments and try again.",
+                    "service": "Groq Whisper",
+                    "details": str(rl_err)
+                },
+            )
+        except (APITimeoutError, APIConnectionError) as timeout_err:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "error": "TIMEOUT_ERROR",
+                    "message": "AI speech processing timed out after 10 seconds. Please try a shorter audio clip.",
+                    "service": "Groq Whisper",
+                    "details": str(timeout_err)
+                },
+            )
+        except (GroqError, APIStatusError) as groq_err:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "error": "GROQ_API_ERROR",
+                    "message": f"AI speech transcription service is temporarily unavailable: {getattr(groq_err, 'message', str(groq_err))}",
+                    "service": "Groq Whisper",
+                    "details": str(groq_err)
+                },
             )
         except Exception as exc:
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Audio transcription service failed: {str(exc)}",
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "error": "AI_SERVICE_UNAVAILABLE",
+                    "message": f"Audio transcription service failed: {str(exc)}",
+                    "service": "Groq Whisper"
+                },
             )
     else:
         # Development / Offline Fallback Simulation
@@ -206,8 +262,19 @@ async def process_audio(
             "dynamic programming memoization and state transitions in grid traversal."
         )
 
-    # 4. Extract Structured Doubt via Classifier Pipeline
-    structured_doubt = classify_transcript(transcript_text)
+    # 4. Extract Structured Doubt via Classifier Pipeline with 10s timeout
+    try:
+        structured_doubt = classify_transcript(transcript_text, timeout_seconds=10.0)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "error": "AI_CLASSIFIER_UNAVAILABLE",
+                "message": f"Doubt classification pipeline failed: {str(exc)}",
+                "service": "Groq Llama 3"
+            }
+        )
+
     processing_time_ms = round((time.perf_counter() - start_time) * 1000, 2)
 
     return AudioProcessingResponse(
@@ -228,13 +295,16 @@ async def process_audio(
 # -----------------------------------------------------------------------------
 
 @app.post("/api/classify-doubt", response_model=ClassifyDoubtResponse)
+@limiter.limit("20/minute")
 def classify_doubt_endpoint(
+    request: Request,
     payload: ClassifyDoubtRequest,
     current_user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
-    Accepts raw speech-to-text transcript text, passes it to Groq Llama 3 with JSON mode,
-    and returns a structured doubt object (title, description, category, tags, urgency).
+    Accepts raw speech-to-text transcript text, passes it to Groq Llama 3 with JSON mode
+    and a 10-second timeout, and returns a structured doubt object.
+    Catches Groq API outages or rate limits to return a structured 503 response.
     """
     start_time = time.perf_counter()
 
@@ -244,7 +314,28 @@ def classify_doubt_endpoint(
             detail="Transcript text cannot be empty.",
         )
 
-    structured_doubt = classify_transcript(payload.transcript)
+    try:
+        structured_doubt = classify_transcript(payload.transcript, timeout_seconds=10.0)
+    except (RateLimitError, APITimeoutError, APIConnectionError, APIStatusError, GroqError) as groq_err:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "error": "AI_CLASSIFIER_UNAVAILABLE",
+                "message": "AI classification service is temporarily unavailable or rate-limited. Please try again.",
+                "service": "Groq Llama 3",
+                "details": str(groq_err)
+            }
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "error": "AI_SERVICE_UNAVAILABLE",
+                "message": f"Doubt classification failed: {str(exc)}",
+                "service": "Groq Llama 3"
+            }
+        )
+
     processing_time_ms = round((time.perf_counter() - start_time) * 1000, 2)
 
     return ClassifyDoubtResponse(
@@ -260,7 +351,9 @@ def classify_doubt_endpoint(
 # -----------------------------------------------------------------------------
 
 @app.post("/api/match-mentor", response_model=MatchMentorResponse)
+@limiter.limit("30/minute")
 async def match_mentor_endpoint(
+    request: Request,
     payload: MatchMentorRequest,
     current_user: AuthenticatedUser = Depends(get_current_user),
 ):
@@ -303,7 +396,9 @@ async def match_mentor_endpoint(
 
 @app.post("/api/generate-roadmap", response_model=GenerateRoadmapResponse)
 @app.post("/api/roadmap", response_model=GenerateRoadmapResponse)
+@limiter.limit("10/minute")
 def generate_roadmap_endpoint(
+    request: Request,
     payload: GenerateRoadmapRequest,
     current_user: AuthenticatedUser = Depends(get_current_user),
 ):

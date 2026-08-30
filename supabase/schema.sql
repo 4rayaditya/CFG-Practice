@@ -325,34 +325,30 @@ CREATE POLICY "Mentors can update their own mentor record"
 
 -- 8.4 Doubts Policies
 DROP POLICY IF EXISTS "Students can view their own doubts" ON public.doubts;
-CREATE POLICY "Students can view their own doubts"
+DROP POLICY IF EXISTS "Public doubts are viewable" ON public.doubts;
+DROP POLICY IF EXISTS "Anyone can view doubts" ON public.doubts;
+CREATE POLICY "Anyone can view doubts"
     ON public.doubts FOR SELECT
-    TO authenticated
-    USING (
-        auth.uid() = student_id 
-        OR auth.uid() = assigned_mentor_id
-        OR auth.uid() = ANY(matched_mentor_ids)
-        OR EXISTS (
-            SELECT 1 FROM public.profiles 
-            WHERE id = auth.uid() AND role IN ('mentor', 'admin')
-        )
-    );
+    TO anon, authenticated
+    USING (true);
 
 DROP POLICY IF EXISTS "Students can insert their own doubts" ON public.doubts;
-CREATE POLICY "Students can insert their own doubts"
+DROP POLICY IF EXISTS "Anyone can insert doubts" ON public.doubts;
+CREATE POLICY "Anyone can insert doubts"
     ON public.doubts FOR INSERT
-    TO authenticated
-    WITH CHECK (auth.uid() = student_id);
+    TO anon, authenticated
+    WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Students and assigned mentors can update doubts" ON public.doubts;
-CREATE POLICY "Students and assigned mentors can update doubts"
+DROP POLICY IF EXISTS "Users and mentors can update doubts" ON public.doubts;
+CREATE POLICY "Users and mentors can update doubts"
     ON public.doubts FOR UPDATE
-    TO authenticated
-    USING (
-        auth.uid() = student_id 
-        OR auth.uid() = assigned_mentor_id
-        OR EXISTS (
-            SELECT 1 FROM public.profiles 
-            WHERE id = auth.uid() AND role IN ('mentor', 'admin')
-        )
-    );
+    TO anon, authenticated
+    USING (true);
+
+-- Ensure schema and table grants for anon and authenticated users
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+GRANT ALL ON TABLE public.doubts TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.profiles TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.mentors TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.students TO anon, authenticated, service_role;

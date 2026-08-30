@@ -172,7 +172,7 @@ def generate_career_roadmap(request: GenerateRoadmapRequest) -> StructuredRoadma
 
     if groq_api_key and not groq_api_key.startswith("gsk_your"):
         try:
-            client = Groq(api_key=groq_api_key)
+            client = Groq(api_key=groq_api_key, timeout=10.0)
 
             system_prompt = (
                 "You are a world-class Principal Technical Mentor and Curriculum Architect at MentorMatch AI.\n"

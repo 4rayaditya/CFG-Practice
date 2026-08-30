@@ -19,6 +19,9 @@ import { api } from '../../services/api';
 
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
+import { StudentDoubtHub } from '../../components/student/StudentDoubtHub';
+import { saveLocalCachedDoubts, getLocalCachedDoubts } from '../../hooks/useRealtimeDoubts';
+import type { Doubt } from '../../types';
 
 const DEFAULT_MATCHED_MENTORS: Mentor[] = [
   {
@@ -162,6 +165,107 @@ export const VoiceQuery: React.FC = () => {
       localStorage.setItem('mm_current_mentors', JSON.stringify(matchedMentorsList));
     }
   }, [matchedMentorsList]);
+
+  const [intakeMode, setIntakeMode] = useState<'voice' | 'text'>('voice');
+  const [textTitle, setTextTitle] = useState('');
+  const [textCategory, setTextCategory] = useState('Frontend');
+  const [textUrgency, setTextUrgency] = useState('Standard');
+  const [textDescription, setTextDescription] = useState('');
+  const [textTags, setTextTags] = useState('');
+
+  const handleManualTextSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!textTitle.trim() || !textDescription.trim()) return;
+
+    setIsProcessing(true);
+    setIsMatchingMentors(true);
+
+    const tagsArray = textTags
+      .split(',')
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean);
+
+    const newDoubtObj: Doubt = {
+      id: `doubt-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      title: textTitle.trim(),
+      description: textDescription.trim(),
+      transcript: textDescription.trim(),
+      category: textCategory,
+      tags: tagsArray.length > 0 ? tagsArray : [textCategory.toLowerCase()],
+      urgency: textUrgency,
+      status: 'pending',
+      studentId: user?.id || '00000000-0000-0000-0000-000000000001',
+      studentName: user?.fullName || user?.name || 'Alex Chen',
+      createdAt: new Date().toISOString(),
+    };
+
+    setStructuredOutput({
+      transcript: textDescription.trim(),
+      summary: `Student submitted question on ${textCategory}: ${textTitle.trim()}`,
+      category: textCategory,
+      tags: newDoubtObj.tags,
+      urgency: textUrgency,
+    });
+
+    // 1. Try Supabase Insert
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const studentIdToUse = user?.id || sessionData?.session?.user?.id;
+      if (studentIdToUse) {
+        await supabase.from('doubts').insert([{
+          student_id: studentIdToUse,
+          title: textTitle.trim(),
+          description: textDescription.trim(),
+          transcript: textDescription.trim(),
+          category: textCategory,
+          tags: newDoubtObj.tags,
+          status: 'pending',
+          urgency: textUrgency,
+        }]);
+      }
+    } catch (dbErr) {
+      console.warn('Supabase text insert notice, saving locally:', dbErr);
+    }
+
+    // 2. Save locally
+    const currentCached = getLocalCachedDoubts();
+    saveLocalCachedDoubts([newDoubtObj, ...currentCached]);
+
+    // 3. Match mentors
+    try {
+      const matchRes = await api.matchMentors({
+        title: textTitle.trim(),
+        description: textDescription.trim(),
+        category: textCategory,
+        match_count: 3,
+      });
+      if (matchRes.matches && matchRes.matches.length > 0) {
+        const mapped: Mentor[] = matchRes.matches.map((m) => ({
+          id: m.mentor_id,
+          fullName: m.full_name,
+          headline: m.headline,
+          bio: m.bio,
+          expertiseTags: m.expertise_tags,
+          rating: m.rating,
+          matchScore: Math.round(m.similarity * 100),
+          isAvailable: true,
+        }));
+        setMatchedMentorsList(mapped);
+      }
+    } catch (matchErr) {
+      console.warn('Local mentor matching engaged:', matchErr);
+    }
+
+    setSyncToastMessage('✨ Question posted successfully to live mentor queue!');
+    setTimeout(() => setSyncToastMessage(null), 5000);
+
+    // Reset inputs
+    setTextTitle('');
+    setTextDescription('');
+    setTextTags('');
+    setIsProcessing(false);
+    setIsMatchingMentors(false);
+  };
 
   const handleResetDoubt = () => {
     setStructuredOutput(null);
@@ -370,12 +474,130 @@ export const VoiceQuery: React.FC = () => {
         </div>
       </div>
 
+      {/* Intake Mode Switcher: Voice vs Text */}
+      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Intake Mode:</span>
+        <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200">
+          <button
+            type="button"
+            onClick={() => setIntakeMode('voice')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+              intakeMode === 'voice'
+                ? 'bg-white text-sky-700 shadow-xs'
+                : 'text-slate-500 hover:text-slate-900'
+            }`}
+          >
+            🎙️ Voice Recording
+          </button>
+          <button
+            type="button"
+            onClick={() => setIntakeMode('text')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+              intakeMode === 'text'
+                ? 'bg-white text-teal-700 shadow-xs'
+                : 'text-slate-500 hover:text-slate-900'
+            }`}
+          >
+            ✍️ Type Question & Code
+          </button>
+        </div>
+      </div>
+
       {/* Voice Recorder Component */}
-      <AudioRecorder
-        onSubmit={handleSubmitDoubt}
-        isSubmitting={isProcessing}
-        submitButtonText={isOnline ? 'Submit to Mentors' : 'Save Offline (IndexedDB)'}
-      />
+      {intakeMode === 'voice' ? (
+        <AudioRecorder
+          onSubmit={handleSubmitDoubt}
+          isSubmitting={isProcessing}
+          submitButtonText={isOnline ? 'Submit to Mentors' : 'Save Offline (IndexedDB)'}
+        />
+      ) : (
+        <form onSubmit={handleManualTextSubmit} className="light-panel rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-teal-600" />
+              <span>Describe Your Technical Roadblock</span>
+            </h3>
+            <span className="text-[11px] text-slate-400">Direct Mentor Intake</span>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 block">Question Title / Headline</label>
+            <input
+              type="text"
+              required
+              value={textTitle}
+              onChange={(e) => setTextTitle(e.target.value)}
+              placeholder="e.g. How to prevent memory leaks in useEffect with MediaRecorder?"
+              className="w-full text-xs text-slate-800 p-3 rounded-xl border border-slate-200 focus:outline-hidden focus:border-sky-500 focus:ring-2 focus:ring-sky-200 transition"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 block">Technical Category</label>
+              <select
+                value={textCategory}
+                onChange={(e) => setTextCategory(e.target.value)}
+                className="w-full text-xs text-slate-800 p-2.5 rounded-xl border border-slate-200 bg-white focus:outline-hidden focus:border-sky-500 transition"
+              >
+                <option value="Frontend">Frontend (React, TypeScript, CSS, UI)</option>
+                <option value="Backend">Backend (FastAPI, Python, SQL, REST)</option>
+                <option value="AI/ML">AI/ML (Whisper, pgvector, LLMs)</option>
+                <option value="Algorithms">Algorithms (DP, Trees, Graphs, LeetCode)</option>
+                <option value="System Design">System Design & Architecture</option>
+                <option value="Career & Projects">Career Guidance & Portfolio</option>
+                <option value="General">General Question</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 block">Urgency Level</label>
+              <select
+                value={textUrgency}
+                onChange={(e) => setTextUrgency(e.target.value)}
+                className="w-full text-xs text-slate-800 p-2.5 rounded-xl border border-slate-200 bg-white focus:outline-hidden focus:border-sky-500 transition"
+              >
+                <option value="Standard">Standard (General Study)</option>
+                <option value="Urgent">Urgent (Blocked / Project Deadline)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 block">Explanation & Problem Details</label>
+            <textarea
+              required
+              rows={4}
+              value={textDescription}
+              onChange={(e) => setTextDescription(e.target.value)}
+              placeholder="Explain the unexpected behavior, error messages, or concepts you'd like guidance on..."
+              className="w-full text-xs text-slate-800 p-3 rounded-xl border border-slate-200 focus:outline-hidden focus:border-sky-500 focus:ring-2 focus:ring-sky-200 transition"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 block">Relevant Tags (Comma-separated)</label>
+            <input
+              type="text"
+              value={textTags}
+              onChange={(e) => setTextTags(e.target.value)}
+              placeholder="e.g. react, hooks, web-audio, memory-leak"
+              className="w-full text-xs text-slate-800 p-2.5 rounded-xl border border-slate-200 focus:outline-hidden focus:border-sky-500 transition"
+            />
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <button
+              type="submit"
+              disabled={isProcessing || !textTitle.trim() || !textDescription.trim()}
+              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-sky-600 hover:from-teal-500 hover:to-sky-500 text-white font-bold text-xs shadow-md shadow-teal-600/20 flex items-center gap-2 transition hover:scale-[1.02] active:scale-98 disabled:opacity-50"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{isProcessing ? 'Submitting...' : 'Post Question to Mentor Queue'}</span>
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* Structured Output & Match Preview */}
       {structuredOutput && (
@@ -405,7 +627,7 @@ export const VoiceQuery: React.FC = () => {
           <div className="space-y-3 text-sm">
             <div>
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 block mb-1">
-                Your Spoken Words:
+                Your Question Transcript:
               </span>
               <p className="text-slate-800 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs italic">
                 "{structuredOutput.transcript}"
@@ -436,6 +658,9 @@ export const VoiceQuery: React.FC = () => {
         isLoading={isMatchingMentors}
         doubtTitle={structuredOutput?.transcript?.slice(0, 80) || 'React and Web Audio State Management'}
       />
+
+      {/* Embedded Student Doubt & Solution Hub */}
+      <StudentDoubtHub />
 
       {/* PWA Install Prompt Banner */}
       <InstallPwaPrompt />

@@ -54,9 +54,12 @@ export const Login: React.FC = () => {
     return getDashboardPath(role);
   };
 
+  const handleSelectRole = (role: UserRole) => {
+    setSelectedRole(role);
+  };
+
   const handleQuickFill = (role: UserRole) => {
     setSelectedRole(role);
-    setRole(role);
     if (role === 'student') {
       setEmail('alex.chen@student.edu');
       setFullName('Alex Chen');
@@ -88,15 +91,14 @@ export const Login: React.FC = () => {
       if (authMode === 'signin') {
         const result = await signInWithSupabase(email, password);
         if (!result.success) {
-          setErrorMsg(result.error || 'Invalid credentials. Please try again.');
+          setErrorMsg(result.error || 'Invalid credentials. Please check your email and password.');
           setLoading(false);
           return;
         }
-        setRole(dbRole);
         setSuccessMsg('Signed in successfully! Redirecting...');
         setTimeout(() => {
           navigate(getRoleDestination(dbRole));
-        }, 600);
+        }, 500);
       } else {
         const result = await signUpWithSupabase(email, password, fullName || 'Community Member', dbRole);
         if (!result.success) {
@@ -107,7 +109,7 @@ export const Login: React.FC = () => {
         setSuccessMsg('Account created successfully! Redirecting to your community dashboard...');
         setTimeout(() => {
           navigate(getDashboardPath(dbRole));
-        }, 800);
+        }, 600);
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'An unexpected error occurred.');
@@ -188,7 +190,7 @@ export const Login: React.FC = () => {
               <button
                 type="button"
                 id="role-student"
-                onClick={() => handleQuickFill('student')}
+                onClick={() => handleSelectRole('student')}
                 className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition text-xs font-medium text-center ${
                   selectedRole === 'student'
                     ? 'bg-sky-50 border-sky-500 text-sky-800 ring-2 ring-sky-500/10 font-bold shadow-xs'
@@ -202,7 +204,7 @@ export const Login: React.FC = () => {
               <button
                 type="button"
                 id="role-mentor"
-                onClick={() => handleQuickFill('mentor')}
+                onClick={() => handleSelectRole('mentor')}
                 className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition text-xs font-medium text-center ${
                   selectedRole === 'mentor'
                     ? 'bg-emerald-50 border-emerald-500 text-emerald-800 ring-2 ring-emerald-500/10 font-bold shadow-xs'
@@ -216,7 +218,7 @@ export const Login: React.FC = () => {
               <button
                 type="button"
                 id="role-admin"
-                onClick={() => handleQuickFill('admin')}
+                onClick={() => handleSelectRole('admin')}
                 className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition text-xs font-medium text-center ${
                   selectedRole === 'admin'
                     ? 'bg-purple-50 border-purple-500 text-purple-800 ring-2 ring-purple-500/10 font-bold shadow-xs'

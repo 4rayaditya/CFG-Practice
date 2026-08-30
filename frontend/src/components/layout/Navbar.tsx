@@ -35,31 +35,39 @@ export const Navbar: React.FC = () => {
     });
   }, []);
 
-  // Strict RBAC Navigation Link Isolation
+  // Strict RBAC Navigation Link Isolation with All Feature Portals
   const getNavLinks = () => {
     if (!isAuthenticated || !user) {
       return [
         { name: 'Home', path: '/', icon: Heart },
+        { name: 'Discover Mentors', path: '/mentors', icon: Users },
         { name: 'Learning Pathways', path: '/roadmap', icon: Compass },
       ];
     }
 
     if (user.role === 'student') {
       return [
-        { name: 'Ask a Question', path: '/student/voice-query', icon: Mic },
+        { name: 'Ask & Doubts', path: '/student/voice-query', icon: Mic },
+        { name: 'Skill Mastery & Progress', path: '/student/progress', icon: GraduationCap },
+        { name: 'Discover Mentors', path: '/mentors', icon: Users },
         { name: 'Learning Pathways', path: '/roadmap', icon: Compass },
       ];
     }
 
     if (user.role === 'mentor') {
       return [
-        { name: 'Mentor Doubt Board', path: '/mentor/doubt-board', icon: Users },
+        { name: 'Mentor Doubt Board', path: '/mentor/doubt-board', icon: Sparkles },
+        { name: 'Discover Mentors', path: '/mentors', icon: Users },
+        { name: 'Learning Pathways', path: '/roadmap', icon: Compass },
       ];
     }
 
     if (user.role === 'admin') {
       return [
-        { name: 'System Telemetry & Analytics', path: '/admin/analytics', icon: Activity },
+        { name: 'Telemetry & Analytics', path: '/admin/analytics', icon: Activity },
+        { name: 'Mentor Board', path: '/mentor/doubt-board', icon: Sparkles },
+        { name: 'Discover Mentors', path: '/mentors', icon: Users },
+        { name: 'Learning Pathways', path: '/roadmap', icon: Compass },
       ];
     }
 
