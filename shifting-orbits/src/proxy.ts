@@ -14,27 +14,30 @@ export async function proxy(request: NextRequest) {
   }
 
   if (!user) {
-    // If no user, redirect to login
-    const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = '/login'
-    return NextResponse.redirect(redirectUrl)
+    // TEMPORARY BYPASS FOR UI TESTING
+    // If no user, we bypass the redirect so you can view the UIs without a Supabase account.
+    // In production, uncomment the redirect to /login.
+    
+    // const redirectUrl = request.nextUrl.clone()
+    // redirectUrl.pathname = '/login'
+    // return NextResponse.redirect(redirectUrl)
   }
 
   // Get user role from user_metadata (default to student if missing)
-  const role = user.user_metadata?.role || 'student'
+  const role = user?.user_metadata?.role || 'student'
 
-  // Route Guards based on Role
-  if (path.startsWith('/student') && role !== 'student') {
-    return redirectBasedOnRole(request, role)
-  }
+  // Route Guards based on Role (TEMPORARILY DISABLED FOR UI TESTING)
+  // if (path.startsWith('/student') && role !== 'student') {
+  //   return redirectBasedOnRole(request, role)
+  // }
 
-  if (path.startsWith('/volunteer') && role !== 'volunteer') {
-    return redirectBasedOnRole(request, role)
-  }
+  // if (path.startsWith('/volunteer') && role !== 'volunteer') {
+  //   return redirectBasedOnRole(request, role)
+  // }
 
-  if (path.startsWith('/admin') && role !== 'admin') {
-    return redirectBasedOnRole(request, role)
-  }
+  // if (path.startsWith('/admin') && role !== 'admin') {
+  //   return redirectBasedOnRole(request, role)
+  // }
 
   // If user is logged in and visits root "/", redirect to their dashboard
   if (path === '/') {
