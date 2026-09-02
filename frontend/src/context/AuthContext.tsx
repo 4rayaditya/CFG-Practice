@@ -266,7 +266,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      if (isSupabaseConfigured) {
+      if (isSupabaseConfigured && session) {
         await supabase.auth.signOut();
       }
     } catch (err) {
