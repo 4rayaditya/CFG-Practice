@@ -17,7 +17,8 @@ import {
   FileText,
   Home,
   Award,
-  Calendar
+  Calendar,
+  MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
@@ -44,33 +45,39 @@ export const Navbar: React.FC = () => {
     if (!isAuthenticated || !user) {
       return [
         { name: 'Home', path: '/', icon: Heart },
-        { name: 'Discover Mentors', path: '/mentors', icon: Users },
-        { name: 'Cradle-to-College Pathways', path: '/roadmap', icon: Compass },
+        { name: 'Ask & Doubts', path: '/student/doubts', icon: MessageSquare },
+        { name: 'Buddy Mentoring', path: '/student/buddy', icon: Users },
+        { name: 'Badges & Rewards', path: '/student/rewards', icon: Award },
+        { name: 'College Pathways', path: '/roadmap', icon: Compass },
+        { name: 'Discover Mentors', path: '/mentors', icon: Sparkles },
       ];
     }
 
     if (user.role === 'student') {
       return [
-        { name: 'Ask & Doubts', path: '/student/voice-query', icon: Mic },
+        { name: 'Ask & Doubts', path: '/student/doubts', icon: MessageSquare },
+        { name: 'Voice AI Query', path: '/student/voice-query', icon: Mic },
+        { name: 'Buddy Mentoring', path: '/student/buddy', icon: Users },
+        { name: 'Badges & Rewards', path: '/student/rewards', icon: Award },
         { name: 'My College Pathway', path: '/roadmap', icon: Compass },
-        { name: 'Skill Mastery & Reports', path: '/student/progress', icon: GraduationCap },
-        { name: 'Discover Mentors', path: '/mentors', icon: Users },
+        { name: 'Skill Mastery', path: '/student/progress', icon: GraduationCap },
       ];
     }
 
     if (user.role === 'mentor') {
       return [
-        { name: 'My Assigned Students', path: '/mentor/doubt-board', icon: Users },
-        { name: 'Discover Mentors', path: '/mentors', icon: Compass },
+        { name: 'Assigned Doubts & Students', path: '/mentor/doubt-board', icon: Users },
+        { name: 'Offline Field Logger', path: '/mentor/log-visit', icon: Mic },
         { name: 'Curriculum Tracks', path: '/roadmap', icon: GraduationCap },
+        { name: 'Discover Mentors', path: '/mentors', icon: Compass },
       ];
     }
 
     if (user.role === 'admin') {
       return [
         { name: 'Admin Telemetry & Governance', path: '/admin/analytics', icon: Activity },
-        { name: 'Discover Mentors', path: '/mentors', icon: Users },
         { name: 'Curriculum Pathways', path: '/roadmap', icon: Compass },
+        { name: 'Discover Mentors', path: '/mentors', icon: Users },
       ];
     }
 

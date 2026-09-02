@@ -15,6 +15,10 @@ export const CareerRoadmap = lazy(() => import('./roadmap/CareerRoadmap').then((
 export const AdminDashboard = lazy(() => import('./admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard })));
 export const MentorDiscovery = lazy(() => import('./mentor/MentorDiscovery').then((m) => ({ default: m.MentorDiscovery })));
 export const StudentProgressTracker = lazy(() => import('../components/student/StudentProgressTracker').then((m) => ({ default: m.StudentProgressTracker })));
+export const StudentDoubts = lazy(() => import('./student/StudentDoubts').then((m) => ({ default: m.StudentDoubts })));
+export const BuddyMentoring = lazy(() => import('./student/BuddyMentoring').then((m) => ({ default: m.BuddyMentoring })));
+export const GamifiedRewards = lazy(() => import('./student/GamifiedRewards').then((m) => ({ default: m.GamifiedRewards })));
+export const FieldVisitLogger = lazy(() => import('./mentor/FieldVisitLogger').then((m) => ({ default: m.FieldVisitLogger })));
 
 export const RouteLoadingFallback: React.FC = () => (
   <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 text-slate-500">
@@ -42,7 +46,7 @@ export const AppRoutes: React.FC = () => {
           {/* Central Dynamic Role Resolver */}
           <Route path="/dashboard" element={<DashboardRedirect />} />
 
-          {/* Student Protected Routes */}
+          {/* Student Protected & Demo Routes */}
           <Route
             path="/student/voice-query"
             element={
@@ -52,6 +56,43 @@ export const AppRoutes: React.FC = () => {
             }
           />
           <Route
+            path="/student/doubts"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <StudentDoubts />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/students/doubts" element={<Navigate to="/student/doubts" replace />} />
+          <Route path="/doubts" element={<Navigate to="/student/doubts" replace />} />
+
+          <Route
+            path="/student/buddy"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <BuddyMentoring />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/students/buddy" element={<Navigate to="/student/buddy" replace />} />
+          <Route path="/buddy" element={<Navigate to="/student/buddy" replace />} />
+
+          <Route
+            path="/student/rewards"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <GamifiedRewards />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/student/badges" element={<Navigate to="/student/rewards" replace />} />
+          <Route path="/rewards" element={<Navigate to="/student/rewards" replace />} />
+          <Route path="/badges" element={<Navigate to="/student/rewards" replace />} />
+
+          <Route path="/student/career" element={<Navigate to="/roadmap" replace />} />
+          <Route path="/career" element={<Navigate to="/roadmap" replace />} />
+
+          <Route
             path="/student/progress"
             element={
               <ProtectedRoute allowedRoles={['student']}>
@@ -59,9 +100,10 @@ export const AppRoutes: React.FC = () => {
               </ProtectedRoute>
             }
           />
-          <Route path="/student" element={<Navigate to="/student/voice-query" replace />} />
+          <Route path="/student" element={<Navigate to="/student/doubts" replace />} />
+          <Route path="/students" element={<Navigate to="/student/doubts" replace />} />
 
-          {/* Mentor Protected Routes */}
+          {/* Mentor / Volunteer Protected Routes */}
           <Route
             path="/mentor/doubt-board"
             element={
@@ -70,6 +112,17 @@ export const AppRoutes: React.FC = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/mentor/log-visit"
+            element={
+              <ProtectedRoute allowedRoles={['mentor']}>
+                <FieldVisitLogger />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/volunteer/log-visit" element={<Navigate to="/mentor/log-visit" replace />} />
+          <Route path="/volunteer/doubts" element={<Navigate to="/mentor/doubt-board" replace />} />
+          <Route path="/volunteer" element={<Navigate to="/mentor/doubt-board" replace />} />
           <Route path="/mentor" element={<Navigate to="/mentor/doubt-board" replace />} />
 
           {/* Admin Protected Routes */}

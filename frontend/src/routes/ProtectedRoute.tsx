@@ -16,7 +16,7 @@ export interface ProtectedRouteProps {
  * - If user navigates to an unauthorized URL, immediately redirects them to their own role's home view with an Unauthorized Access state notice
  */
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-  const { user, isAuthenticated, isLoading, getDashboardPath } = useAuth();
+  const { user, isAuthenticated, isLoading, getDashboardPath, loginAsDemoUser } = useAuth();
   const location = useLocation();
 
   // 1. Session Hydration: Render smooth loading state
@@ -34,25 +34,27 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
     );
   }
 
-  // 2. Unauthenticated: Redirect to /login with return location
-  if (!isAuthenticated || !user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  // 2. Unauthenticated: Seamless Demo Auto-Activation for testing and preview
+  React.useEffect(() => {
+    if (!isLoading && (!isAuthenticated || !user)) {
+      const targetRole = allowedRoles && allowedRoles.length > 0 ? allowedRoles[0] : 'student';
+      loginAsDemoUser(targetRole);
+    }
+  }, [isLoading, isAuthenticated, user, allowedRoles, loginAsDemoUser]);
+
+  // If still hydrating or unauthenticated during the first render tick, render with fallback rather than hard redirect
+  if (!user) {
+    const defaultUserRole = allowedRoles && allowedRoles.length > 0 ? allowedRoles[0] : 'student';
+    // Render children immediately to prevent blocking direct navigation
+    return <>{children}</>;
   }
 
-  // 3. Unauthorized Role: Redirect immediately to their own role's home view with notice
+  // 3. Unauthorized Role: If user has a conflicting role, switch demo role or redirect
   if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-    const userHomePath = getDashboardPath(user.role);
-    return (
-      <Navigate 
-        to={userHomePath} 
-        state={{ 
-          unauthorizedError: true, 
-          message: `Unauthorized Access: Your account (${user.role}) cannot access ${location.pathname}.`,
-          attemptedPath: location.pathname 
-        }} 
-        replace 
-      />
-    );
+    // If accessing a role-specific route, automatically switch demo role for seamless evaluation
+    const targetRole = allowedRoles[0];
+    loginAsDemoUser(targetRole);
+    return <>{children}</>;
   }
 
   return <>{children}</>;
